@@ -1,0 +1,300 @@
+(() => {
+  'use strict';
+
+  const STORAGE_KEY = 'tabaja-employees-v11';
+  function activeTenantId() {
+    try {
+      const activeId = localStorage.getItem('tabaja_card_designer_active_account_v11');
+      if (activeId) return activeId;
+      const account = JSON.parse(localStorage.getItem('tabaja_card_designer_account_v10') || 'null');
+      return String(account?.id || account?.email || account?.company || 'default').trim().toLowerCase().replace(/[^a-z0-9]+/g, '_') || 'default';
+    } catch (_) { return 'default'; }
+  }
+  const tenantKey = (key) => `${key}__${activeTenantId()}`;
+
+  let employees = [];
+  let photoData = '';
+
+  const $ = (id) => document.getElementById(id);
+  const safe = (value = '') => String(value).replace(/[&<>'"]/g, (char) => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;'
+  }[char]));
+
+  function loadEmployees() {
+    try {
+      const parsed = JSON.parse(localStorage.getItem(tenantKey(STORAGE_KEY)) || '[]');
+      employees = Array.isArray(parsed) ? parsed : [];
+    } catch (error) {
+      console.error('Unable to load employees:', error);
+      employees = [];
+    }
+  }
+
+  function saveEmployees() {
+    localStorage.setItem(tenantKey(STORAGE_KEY), JSON.stringify(employees));
+  }
+
+  function fullName(employee) {
+    return [employee.firstName, employee.lastName].filter(Boolean).join(' ').trim() || 'Unnamed Employee';
+  }
+
+  function initials(employee) {
+    return [employee.firstName, employee.lastName].filter(Boolean).map((part) => part[0]).join('').slice(0, 2).toUpperCase() || 'E';
+  }
+
+  function updateStats() {
+    $('employeeTotal').textContent = employees.length;
+    $('employeeActive').textContent = employees.filter((item) => item.status === 'Active').length;
+    $('employeeInactive').textContent = employees.filter((item) => item.status === 'Inactive').length;
+    $('employeeDepartments').textContent = new Set(employees.map((item) => item.department.trim().toLowerCase()).filter(Boolean)).size;
+  }
+
+  function filteredEmployees() {
+    const query = $('employeeSearch').value.trim().toLowerCase();
+    const status = $('employeeStatusFilter').value;
+    return employees.filter((employee) => {
+      const text = [employee.employeeId, fullName(employee), employee.department, employee.jobTitle, employee.company, employee.email, employee.phone]
+        .join(' ').toLowerCase();
+      return (!query || text.includes(query)) && (status === 'all' || employee.status === status);
+    });
+  }
+
+  function renderEmployees() {
+    const rows = filteredEmployees();
+    const tbody = $('employeeTableBody');
+    const empty = $('employeeEmptyState');
+    tbody.innerHTML = '';
+
+    rows.forEach((employee) => {
+      const tr = document.createElement('tr');
+      const avatar = employee.photo
+        ? `<img class="employee-avatar" src="${employee.photo}" alt="">`
+        : `<span class="employee-avatar">${safe(initials(employee))}</span>`;
+      tr.innerHTML = `
+        <td>${avatar}</td>
+        <td><b>${safe(employee.employeeId)}</b><span class="employee-muted">${safe(employee.company || '—')}</span></td>
+        <td><span class="employee-name">${safe(fullName(employee))}</span><span class="employee-muted">${safe(employee.email || employee.phone || 'No contact details')}</span></td>
+        <td>${safe(employee.department || '—')}</td>
+        <td>${safe(employee.jobTitle || '—')}</td>
+        <td><span class="employee-status ${employee.status.toLowerCase()}">${safe(employee.status)}</span></td>
+        <td><div class="employee-actions">
+          <button type="button" data-action="designer" data-key="${safe(employee.key)}">Use in Designer</button>
+          <button type="button" data-action="edit" data-key="${safe(employee.key)}">Edit</button>
+          <button type="button" class="danger" data-action="delete" data-key="${safe(employee.key)}">Delete</button>
+        </div></td>`;
+      tbody.appendChild(tr);
+    });
+
+    empty.classList.toggle('hidden', employees.length > 0 || rows.length > 0);
+    if (!rows.length && employees.length) {
+      empty.classList.remove('hidden');
+      empty.querySelector('h3').textContent = 'No matching employees';
+      empty.querySelector('p').textContent = 'Try another search or status filter.';
+      $('emptyAddEmployeeBtn').style.display = 'none';
+    } else {
+      empty.querySelector('h3').textContent = 'No employees yet';
+      empty.querySelector('p').textContent = 'Add your first employee to start building the company directory.';
+      $('emptyAddEmployeeBtn').style.display = '';
+    }
+    updateStats();
+  }
+
+  function resetForm() {
+    $('employeeForm').reset();
+    $('employeeRecordKey').value = '';
+    $('employeeStatusInput').value = 'Active';
+    $('employeeModalTitle').textContent = 'Add Employee';
+    $('employeeFormMessage').textContent = '';
+    $('employeeFormMessage').className = 'employee-form-message';
+    photoData = '';
+    renderPhotoPreview();
+  }
+
+  function renderPhotoPreview() {
+    $('employeePhotoPreview').innerHTML = photoData ? `<img src="${photoData}" alt="Employee photo preview">` : '<span>Photo</span>';
+  }
+
+  function openModal(employee = null) {
+    resetForm();
+    if (employee) {
+      $('employeeModalTitle').textContent = 'Edit Employee';
+      $('employeeRecordKey').value = employee.key;
+      $('employeeIdInput').value = employee.employeeId || '';
+      $('employeeStatusInput').value = employee.status || 'Active';
+      $('employeeFirstNameInput').value = employee.firstName || '';
+      $('employeeLastNameInput').value = employee.lastName || '';
+      $('employeeDepartmentInput').value = employee.department || '';
+      $('employeeJobTitleInput').value = employee.jobTitle || '';
+      $('employeeCompanyInput').value = employee.company || '';
+      $('employeePhoneInput').value = employee.phone || '';
+      $('employeeEmailInput').value = employee.email || '';
+      $('employeeIssueDateInput').value = employee.issueDate || '';
+      $('employeeExpiryDateInput').value = employee.expiryDate || '';
+      $('employeeNotesInput').value = employee.notes || '';
+      photoData = employee.photo || '';
+      renderPhotoPreview();
+    }
+    $('employeeModal').classList.remove('hidden');
+    setTimeout(() => $('employeeIdInput').focus(), 50);
+  }
+
+  function closeModal() {
+    $('employeeModal').classList.add('hidden');
+  }
+
+  function resizePhoto(file) {
+    return new Promise((resolve, reject) => {
+      if (!file || !file.type.startsWith('image/')) return reject(new Error('Please choose a valid image.'));
+      const reader = new FileReader();
+      reader.onerror = () => reject(new Error('Unable to read the selected image.'));
+      reader.onload = () => {
+        const image = new Image();
+        image.onerror = () => reject(new Error('Unable to process the selected image.'));
+        image.onload = () => {
+          const maxWidth = 420;
+          const maxHeight = 520;
+          const scale = Math.min(maxWidth / image.width, maxHeight / image.height, 1);
+          const canvas = document.createElement('canvas');
+          canvas.width = Math.max(1, Math.round(image.width * scale));
+          canvas.height = Math.max(1, Math.round(image.height * scale));
+          canvas.getContext('2d').drawImage(image, 0, 0, canvas.width, canvas.height);
+          resolve(canvas.toDataURL('image/jpeg', 0.84));
+        };
+        image.src = reader.result;
+      };
+      reader.readAsDataURL(file);
+    });
+  }
+
+  function saveForm(event) {
+    event.preventDefault();
+    const key = $('employeeRecordKey').value;
+    const employeeId = $('employeeIdInput').value.trim();
+    const firstName = $('employeeFirstNameInput').value.trim();
+    const duplicate = employees.find((item) => item.employeeId.toLowerCase() === employeeId.toLowerCase() && item.key !== key);
+    if (duplicate) {
+      $('employeeFormMessage').textContent = 'Employee ID already exists.';
+      return;
+    }
+
+    const record = {
+      key: key || (crypto.randomUUID ? crypto.randomUUID() : `emp-${Date.now()}-${Math.random().toString(16).slice(2)}`),
+      employeeId,
+      status: $('employeeStatusInput').value,
+      firstName,
+      lastName: $('employeeLastNameInput').value.trim(),
+      department: $('employeeDepartmentInput').value.trim(),
+      jobTitle: $('employeeJobTitleInput').value.trim(),
+      company: $('employeeCompanyInput').value.trim(),
+      phone: $('employeePhoneInput').value.trim(),
+      email: $('employeeEmailInput').value.trim(),
+      issueDate: $('employeeIssueDateInput').value,
+      expiryDate: $('employeeExpiryDateInput').value,
+      notes: $('employeeNotesInput').value.trim(),
+      photo: photoData,
+      updatedAt: new Date().toISOString()
+    };
+
+    if (key) {
+      const index = employees.findIndex((item) => item.key === key);
+      if (index >= 0) employees[index] = { ...employees[index], ...record };
+    } else {
+      record.createdAt = new Date().toISOString();
+      employees.unshift(record);
+    }
+
+    try {
+      saveEmployees();
+      renderEmployees();
+      closeModal();
+    } catch (error) {
+      console.error(error);
+      $('employeeFormMessage').textContent = 'Storage is full. Try smaller photos or export a backup.';
+    }
+  }
+
+  function useInDesigner(employee) {
+    localStorage.setItem(tenantKey('tabaja-selected-employee-v11'), JSON.stringify(employee));
+    document.querySelector('.v8-nav-btn[data-view="designer"]')?.click();
+    window.dispatchEvent(new CustomEvent('tabaja:employee-selected', { detail: employee }));
+    alert(`${fullName(employee)} is selected for the Card Designer.\n\nThis V11.0 test stores the selected record safely. Automatic template-field mapping comes in V11.1.`);
+  }
+
+  function handleTableClick(event) {
+    const button = event.target.closest('button[data-action]');
+    if (!button) return;
+    const employee = employees.find((item) => item.key === button.dataset.key);
+    if (!employee) return;
+    if (button.dataset.action === 'edit') openModal(employee);
+    if (button.dataset.action === 'designer') useInDesigner(employee);
+    if (button.dataset.action === 'delete' && confirm(`Delete ${fullName(employee)}? This cannot be undone.`)) {
+      employees = employees.filter((item) => item.key !== employee.key);
+      saveEmployees();
+      renderEmployees();
+    }
+  }
+
+  function exportBackup() {
+    const blob = new Blob([JSON.stringify({ version: '11.0', exportedAt: new Date().toISOString(), employees }, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement('a');
+    anchor.href = url;
+    anchor.download = `tabaja-employees-${new Date().toISOString().slice(0, 10)}.json`;
+    anchor.click();
+    URL.revokeObjectURL(url);
+  }
+
+  async function importBackup(file) {
+    try {
+      const data = JSON.parse(await file.text());
+      const records = Array.isArray(data) ? data : data.employees;
+      if (!Array.isArray(records)) throw new Error('Invalid backup');
+      const valid = records.filter((item) => item && item.employeeId && item.firstName).map((item) => ({
+        ...item,
+        key: item.key || (crypto.randomUUID ? crypto.randomUUID() : `emp-${Date.now()}-${Math.random().toString(16).slice(2)}`),
+        status: item.status === 'Inactive' ? 'Inactive' : 'Active'
+      }));
+      if (!confirm(`Import ${valid.length} employee record(s)? Existing records with the same Employee ID will be replaced.`)) return;
+      const map = new Map(employees.map((item) => [item.employeeId.toLowerCase(), item]));
+      valid.forEach((item) => map.set(item.employeeId.toLowerCase(), item));
+      employees = Array.from(map.values());
+      saveEmployees();
+      renderEmployees();
+    } catch (error) {
+      alert('This file is not a valid Tabaja Employee backup.');
+    } finally {
+      $('importEmployeesFile').value = '';
+    }
+  }
+
+  function init() {
+    if (!$('employeeWorkspace')) return;
+    loadEmployees();
+    renderEmployees();
+    $('addEmployeeBtn').addEventListener('click', () => openModal());
+    $('emptyAddEmployeeBtn').addEventListener('click', () => openModal());
+    $('closeEmployeeModalBtn').addEventListener('click', closeModal);
+    $('cancelEmployeeBtn').addEventListener('click', closeModal);
+    $('employeeModal').addEventListener('click', (event) => { if (event.target === $('employeeModal')) closeModal(); });
+    $('employeeForm').addEventListener('submit', saveForm);
+    $('employeeSearch').addEventListener('input', renderEmployees);
+    $('employeeStatusFilter').addEventListener('change', renderEmployees);
+    $('employeeTableBody').addEventListener('click', handleTableClick);
+    $('employeePhotoInput').addEventListener('change', async (event) => {
+      try {
+        photoData = await resizePhoto(event.target.files[0]);
+        renderPhotoPreview();
+      } catch (error) {
+        $('employeeFormMessage').textContent = error.message;
+      }
+      event.target.value = '';
+    });
+    $('removeEmployeePhotoBtn').addEventListener('click', () => { photoData = ''; renderPhotoPreview(); });
+    $('exportEmployeesBtn').addEventListener('click', exportBackup);
+    $('importEmployeesBtn').addEventListener('click', () => $('importEmployeesFile').click());
+    $('importEmployeesFile').addEventListener('change', (event) => { if (event.target.files[0]) importBackup(event.target.files[0]); });
+    document.addEventListener('keydown', (event) => { if (event.key === 'Escape' && !$('employeeModal').classList.contains('hidden')) closeModal(); });
+  }
+
+  window.addEventListener('DOMContentLoaded', init);
+})();

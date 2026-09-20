@@ -1,0 +1,24 @@
+TABAJA SOLUTION V12.7.0 — STEP 1
+
+FOCUS
+- Reduced header height and unused space
+- Unified colour tokens and component radii
+- Added stronger Tabaja visual mark in the header
+- Simplified search, account area and action toolbar
+- Reduced spacing in Card Design Center and Elements Library
+- Refined sidebar active state
+
+PROTECTED / UNCHANGED
+- Zebra print engine
+- Print Current / Front + Back / Vector Print
+- Canvas rendering
+- PNG export
+- PDF Stable / Vector PDF
+- Existing project and employee data logic
+
+TEST FIRST
+1. Sign in and inspect header height
+2. Open Card Design Center
+3. Open Emoji & Flags
+4. Open Identity Studio
+5. Test PNG and one Zebra print

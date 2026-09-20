@@ -1,0 +1,9 @@
+V12.9.2 — NFC SAME-ORIGIN FIX
+
+Actual repair:
+- The NFC Bridge now serves the complete Tabaja application at http://127.0.0.1:8766/
+- NFC Studio and the reader API now run on the same local origin.
+- Read NFC Card, Write Website Link, Verify Written Card, and Auto-write execute directly from the main NFC Studio page.
+- No popup, iframe, postMessage, GitHub-to-localhost fetch, or fake status text is used.
+- Starting Start-NFC-Bridge.bat automatically opens the full local Tabaja application.
+- All non-NFC project files and behavior remain unchanged.

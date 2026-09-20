@@ -1,0 +1,22 @@
+TABAJA CARD DESIGNER V9.0 - PWA BETA
+
+WHAT IS INCLUDED
+- Installable app on Android, Windows and supported desktop browsers.
+- Home-screen / desktop icon.
+- Standalone full-screen app window.
+- App-shell offline cache after the first successful online load.
+- Automatic delivery of future website updates.
+- In-app "Install App" button when the browser allows installation.
+
+HOW TO TEST
+1. Upload all files and folders to GitHub Pages or another HTTPS website.
+2. Open the website in Chrome or Microsoft Edge.
+3. Sign in to the existing application.
+4. Press "Install App" in the top bar, or use the browser's Install option.
+5. Open Tabaja Cards from the new icon.
+
+IMPORTANT
+- Installation requires HTTPS (localhost is also allowed for development).
+- iPhone/iPad: Safari > Share > Add to Home Screen. Apple does not show the same automatic install prompt.
+- The current login remains the existing local/demo login. Secure paid accounts, licences and server permissions belong to Phase 2.
+- External design libraries are cached after they load successfully online at least once.

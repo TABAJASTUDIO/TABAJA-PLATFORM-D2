@@ -1,0 +1,19 @@
+TABAJA CARD DESIGNER V10.1 — CLOUD FOUNDATION
+
+This build supports two modes:
+1) Cloud mode with real Supabase authentication and company workspaces.
+2) Preview mode using the local admin test account.
+
+TO ACTIVATE CLOUD MODE
+1. Create a Supabase project.
+2. Open SQL Editor and run supabase-schema.sql.
+3. In the app, sign in with the preview admin account.
+4. Open Dashboard > Cloud Setup.
+5. Paste Project URL and anon/public key.
+6. Press Test & Save.
+7. Log out, then use Create Company to create the first real cloud account.
+
+IMPORTANT
+- The anon key is intended for browser apps; security is enforced by Row Level Security policies.
+- Never place the Supabase service_role key inside this app.
+- Email confirmation may be enabled in Supabase. If enabled, confirm the email before signing in.

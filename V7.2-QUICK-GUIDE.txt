@@ -1,0 +1,12 @@
+TABAJA CARD DESIGNER V7.2 — ICONS + BATCH PRINT
+
+1. Upload Excel / CSV.
+2. Upload Employee Photos Folder. Name each photo with Employee ID, e.g. 000001.jpg.
+3. Upload Company Logos Folder, e.g. B7S.png.
+4. Map the Excel columns.
+5. Preview a record before printing.
+6. Print 1-2 test cards, then Print This 50.
+
+AUTOMATIC ICONS
+Phone, WhatsApp, Email, Website, Facebook, Instagram, X/Twitter and LinkedIn icons appear automatically beside their values.
+If a field is blank, its icon and line are completely hidden.

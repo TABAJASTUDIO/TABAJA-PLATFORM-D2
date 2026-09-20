@@ -1,0 +1,7 @@
+Tabaja Solution V12.3 — Art Direction
+
+- Redesigned two-level header and coloured File / Export / Print controls.
+- Honest content counts: 12 ready templates, 8 collections, 2 materials.
+- Added Government ID, Driver License, Residence Permit and Doctor templates.
+- Added interactive collection cards and expanded filters.
+- Zebra print, canvas, PNG and PDF engines remain unchanged.

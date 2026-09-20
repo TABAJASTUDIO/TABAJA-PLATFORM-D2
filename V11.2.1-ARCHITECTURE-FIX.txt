@@ -1,0 +1,16 @@
+TABAJA SOLUTION V11.2.1 — ARCHITECTURE FIX
+
+Fixed navigation:
+- Command Center opens Command Center
+- Identity Studio opens the card designer
+- Employee Center opens employee records
+- Print Center opens a dedicated hub with Batch Printing, Print Quality and Zebra Settings
+- Reports opens a dedicated reports workspace
+- NFC Studio opens a dedicated NFC workspace
+
+Protected and unchanged:
+- Zebra stable print engine
+- Print Current / Print Vector
+- Canvas
+- PDF and PNG export
+- Batch production logic

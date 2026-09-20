@@ -1,0 +1,10 @@
+Tabaja Solution V12.1 — Commercial Polish Stage 2
+
+Changes:
+- Compact top command bar without changing any print/export button IDs.
+- Updated brand subtitle to Smart Identity Platform.
+- Premium Template Gallery metrics, material badges and hover preview.
+- Generic Card Properties terminology instead of employee-only wording.
+- New Background Type workflow: Solid, Gradient, Image and Split.
+- Existing Zebra, Canvas, PNG, PDF and print engines remain unchanged.
+- Service worker cache bumped to force the new UI to load.

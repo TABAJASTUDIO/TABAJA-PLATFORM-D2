@@ -1,0 +1,11 @@
+TABaja Solution V12.8.8 — NFC Real Integration
+
+Changed only NFC Studio and NFC Bridge.
+
+- Main NFC Studio buttons now operate through the local bridge window using postMessage.
+- Connect NFC Bridge opens the bridge once; it may remain open or minimized.
+- Read, Write, Verify, and Auto-write work from the main Tabaja NFC Studio page.
+- Bridge runs on http://127.0.0.1:8766/
+- URL verification normalizes www and trailing slash differences.
+- Write verification retries three times.
+- No Card Designer, printing, Zebra, batch, templates, employee, or other module files were changed.

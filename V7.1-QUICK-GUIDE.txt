@@ -1,0 +1,16 @@
+TABAJA CARD DESIGNER V7.1 - QUICK TEST
+
+1) Open index.html and login.
+2) Upload Excel.
+3) Select Employee Photos folder. Name photos by Employee ID: 000001.jpg, 000002.jpg.
+4) Select Company Logos folder. Name each logo by company: B7S.png.
+5) In Excel Company column use B7S (or use a Logo Filename column containing B7S.png).
+6) Click Preview Record.
+7) Test records 1 to 2 before printing 50.
+
+EXAMPLE
+Employee ID | Full Name | Company | Logo Filename
+000001 | John Kamara | B7S | B7S.png
+000002 | Ibrahim Sesay | B7S | B7S.png
+
+Logo Filename is optional when Company exactly matches the logo filename.

@@ -1,0 +1,19 @@
+TABAJA SOLUTION V12.8 — IDENTITY STUDIO
+
+Implemented:
+- New three-zone Identity Studio layout.
+- Left: Template Collection, search, collections and element tools.
+- Centre: enlarged card canvas as the dominant workspace.
+- Right: Elements / Layers / Properties inspector area.
+- Expanded built-in element library: vehicles, transport, education, sports, animals, food, celebration and expressions.
+- Existing essential flags retained without unnecessary expansion.
+- Compact studio header and refined panel spacing.
+
+Protected and unchanged:
+- Zebra printing engine
+- Print Current
+- Vector Print
+- Canvas rendering
+- PNG export
+- PDF export
+- Batch printing logic

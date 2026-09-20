@@ -1,0 +1,17 @@
+V12.8.3 — NFC Local Writer
+
+Only NFC-related files were changed:
+- nfc-studio.js
+- NFC-Bridge/Tabaja-NFC-Bridge.ps1
+- index.html (NFC script cache version only)
+- service-worker.js (cache version and NFC script entry only)
+
+Reason:
+Microsoft Edge blocks an HTTPS GitHub Pages PWA from reaching the loopback bridge even when CORS is correct. The bridge now serves a same-origin local NFC writer at:
+http://127.0.0.1:8765/studio
+
+Usage:
+1. Run NFC-Bridge/Start-NFC-Bridge.bat
+2. Keep the black window open
+3. Open NFC Studio and click Open Local NFC Writer
+4. Or open http://127.0.0.1:8765/studio directly

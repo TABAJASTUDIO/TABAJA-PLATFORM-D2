@@ -1,0 +1,13 @@
+TABAJA CARD DESIGNER V9.1 PWA PRO — TEST GUIDE
+
+1. Upload ALL files and folders from this package to the ROOT of the GitHub repository.
+2. Wait for GitHub Pages deployment to finish.
+3. Open the GitHub Pages URL in Edge or Chrome.
+4. Press Ctrl+Shift+R once (hard refresh), then wait 5–10 seconds.
+5. Login and press the blue “Install App” button in the top header.
+6. If Edge hides the browser prompt: menu (…) > Apps > Install Tabaja Card Designer.
+
+IMPORTANT
+- Do not upload the outer folder itself. Upload its contents so index.html, manifest.webmanifest and service-worker.js are at repository root.
+- GitHub Pages HTTPS is required.
+- Old service workers may take one hard refresh to be replaced.

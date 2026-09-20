@@ -1,0 +1,8 @@
+Tabaja Card Designer V8.2 — ID Match + Crop Test
+
+1. Excel must contain Employee ID, e.g. 000006.
+2. Photo filename may be 000006-SAJEDABED.jpg, 000006 Sajed.jpg, or 000006.jpeg.
+3. Leave Photo Filename Column as “Not used”. The program matches by Employee ID automatically.
+4. Upload the photos folder and click Preview.
+5. Auto Crop now removes strong white edge strips first, then centres and zooms the portrait.
+6. Duplicate leading IDs are reported in Pre-flight.

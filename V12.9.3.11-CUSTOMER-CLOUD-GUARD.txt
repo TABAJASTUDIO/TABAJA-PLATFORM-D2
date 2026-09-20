@@ -1,0 +1,6 @@
+V12.9.3.11
+Customer Cloud Guard
+- Cloud setup button is visible to Tabaja Admin only.
+- Customer companies cannot open the Cloud/Supabase setup modal.
+- Defensive guard closes any inherited cloud modal after company switch.
+- No changes to trial, company isolation, NFC or Batch access.

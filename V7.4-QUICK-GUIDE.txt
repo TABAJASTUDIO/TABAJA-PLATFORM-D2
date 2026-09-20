@@ -1,0 +1,8 @@
+TABAJA CARD DESIGNER V7.4 — PROFESSIONAL QUALITY
+
+1. Auto-enhance is enabled by default for employee photos only.
+2. Open Advanced Image & Print Quality to adjust brightness, contrast, saturation, and sharpness.
+3. Press Apply to Current Photo after manual adjustment. Batch previews automatically use the saved settings.
+4. 600 DPI output is enabled by default for sharper small text and print rendering.
+5. Logos and backgrounds are never sharpened or altered.
+6. Pre-flight still reports missing photos, unmatched logos, and unmatched backgrounds.

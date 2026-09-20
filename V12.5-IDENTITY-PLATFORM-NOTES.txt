@@ -1,0 +1,15 @@
+TABAJA SOLUTION V12.5 — IDENTITY PLATFORM
+
+Implemented:
+- Improved login, registration and reset-page contrast.
+- Unified application name: Tabaja Solution.
+- New PWA / desktop icon set and Windows ICO.
+- Stable collection grid sizing after refresh and resize.
+- Clear READY versus COMING SOON card types.
+- Coming Soon cards now explain their status instead of appearing broken.
+- Dynamic template section titles by selected card type.
+- Visible version/build badge.
+- New service-worker cache version to force the update.
+
+Stable engines preserved:
+Zebra printing, Canvas, PNG, PDF, Vector PDF, Print Current and Front + Back.

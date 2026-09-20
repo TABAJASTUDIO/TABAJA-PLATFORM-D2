@@ -1,0 +1,15 @@
+TAB AJA SOLUTION V12.8.2 - NFC BRIDGE ONLY
+
+Scope respected:
+- NFC Studio section updated only.
+- Added nfc-studio.js.
+- Added NFC-Bridge folder with a Windows PC/SC bridge for ACR122U.
+- No changes to printer engine, Zebra settings, Card Designer canvas, Batch Printing, Employees, templates, reports, cloud, or general styles.
+
+Use:
+1. Connect ACR122U.
+2. Run NFC-Bridge/Start-NFC-Bridge.bat and keep the window open.
+3. Open Tabaja Solution > NFC Studio.
+4. Place one NTAG card.
+5. Write and verify the URL.
+6. Enable Auto-write for repeated cards using the same link.

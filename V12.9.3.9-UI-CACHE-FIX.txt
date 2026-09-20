@@ -1,0 +1,7 @@
+TABAJA SOLUTION V12.9.3.9 — UI + CACHE FIX
+
+- Corrected visible product version from legacy V12.7.1 to V12.9.3.9.
+- Hard-hidden FILE / EXPORT / PRINT toolbar on Employee Center, Print Center, Reports, Dashboard, Templates and NFC Studio.
+- Toolbar remains available only in Identity Studio / design-production views where it is required.
+- Rotated PWA service-worker cache and asset query versions so the updated CSS/UI replaces stale cached copies.
+- Preserved Company Manager, 5-day Trial, company isolation, NFC access and Batch access.

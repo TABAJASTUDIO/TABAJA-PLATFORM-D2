@@ -1,0 +1,2 @@
+V12.9.3.7
+Company Manager now shows Trial Started, Trial Expires, Days Remaining, and computed EXPIRED status. Trial duration remains exactly 5 days. Existing company isolation and NFC/Batch access logic unchanged.

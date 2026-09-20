@@ -1,0 +1,1 @@
+V12.9.3.6 adds an admin-only Company Manager. Tabaja Admin can reset a 5-day trial, activate paid Standard access, and enable/disable NFC Studio and Batch Printing per customer company. Customer accounts cannot see the manager.

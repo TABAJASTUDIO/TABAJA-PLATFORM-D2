@@ -1,0 +1,12 @@
+Tabaja Card Designer V8.2.1 — CR80 Size Fix
+
+Fixed:
+- PDF image metadata now uses the real exported pixel dimensions.
+- Front and back pages remain exact CR80: 85.60 × 53.98 mm.
+- Removed software overscan and asymmetric page shifting.
+- Preserved ID-only smart photo matching and crop test features.
+
+Test:
+1. Export/Print Front and Back.
+2. Open the PDF and confirm each page shows one complete card.
+3. Print using Actual size / 100%.

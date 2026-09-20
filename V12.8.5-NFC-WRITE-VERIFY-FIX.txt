@@ -1,0 +1,3 @@
+V12.8.5
+Fixed PowerShell write-verification exception parsing in NFC-Bridge/Tabaja-NFC-Bridge.ps1.
+No other project modules were changed.

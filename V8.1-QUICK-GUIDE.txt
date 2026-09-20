@@ -1,0 +1,19 @@
+TABAJA CARD DESIGNER V8.1 — AUTO FACE CROP BETA
+
+1. Open Batch Printing.
+2. Upload Excel, photos and logos.
+3. Keep “Auto Face Center + Auto Crop” checked.
+4. Preview records before printing.
+
+PHOTO NAMING
+The filename must start with the Employee ID. Text after the ID is allowed:
+000001 Sajed Tabaja.jpg
+000002-Mohamad.png
+
+AUTO FACE CROP
+- One detected face: centred, cropped and scaled automatically.
+- No detected face: Smart Center Crop is used.
+- Multiple faces: warning is displayed and Smart Center Crop is used for safety.
+- The feature uses the browser FaceDetector when available. Other browsers safely fall back to Smart Center Crop.
+
+Always review the preview before a large print job.

@@ -1,0 +1,7 @@
+Tabaja Solution V12.9.3.5 — Standard Access
+
+Customer companies created locally receive a 5-day Standard trial.
+Standard hides NFC Studio and Batch Printing completely.
+Tabaja admin retains full NFC + Batch access.
+Dashboard greeting uses the active company name automatically.
+Company data isolation from V12.9.3.4 remains unchanged.

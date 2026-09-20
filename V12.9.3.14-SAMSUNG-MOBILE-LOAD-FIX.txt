@@ -1,0 +1,4 @@
+V12.9.3.14 Samsung Mobile Load Fix
+- Non-blocking script loading so the mobile UI renders even while CDN libraries load.
+- LAN HTTP no longer attempts unsupported service-worker registration.
+- Existing trial/access/cloud/company logic preserved.

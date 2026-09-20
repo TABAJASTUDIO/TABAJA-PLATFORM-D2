@@ -1,0 +1,21 @@
+TABAJA SOLUTION V12.6.0
+
+MAIN UPDATE
+- Premium Card Design Center redesign
+- Rebuilt white top header with no subtitle clipping
+- Quick-start navigation
+- Elements Library foundation
+- School & Kids emoji pack
+- Country flags pack
+- Click-to-add elements into Identity Studio canvas
+- Global Ctrl+K template search
+- Responsive layout improvements
+
+PROTECTED / UNCHANGED
+- Zebra print engine
+- Print Current Stable
+- Print Vector
+- Canvas rendering core
+- PNG export
+- PDF export
+- Existing batch workflow

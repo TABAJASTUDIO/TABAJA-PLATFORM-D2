@@ -1,0 +1,2 @@
+V12.9.3.3
+Fix: live designer state is reset immediately whenever the active company changes, including login after logout. This prevents the previous company template from appearing until refresh.

@@ -1,0 +1,12 @@
+TABAJA SOLUTION V11.2.0 — COMMAND CENTER PREVIEW
+
+NEW
+- Real Command Center layout
+- Live employee count from Employee Center local data
+- Today cards/jobs placeholders ready for production logging
+- Printer station, NFC reader, recent cards, last batch, activity and quick actions
+- Product module naming: Identity Studio, Employee Center, Print Center, NFC Studio, Reports
+
+PROTECTED
+- app.js stable designer and Zebra print engine were not edited
+- Canvas, PNG/PDF export and current/vector printing were not edited

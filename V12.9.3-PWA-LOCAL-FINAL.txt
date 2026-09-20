@@ -1,0 +1,6 @@
+V12.9.3 Local PWA Final
+- Keeps NFC same-origin local mode that successfully detects the ACR122U and cards.
+- Local http://127.0.0.1:8766 app is installable as a real PWA; service worker remains enabled.
+- Removed window-controls-overlay so the black PWA title bar no longer covers Cloud / Logout.
+- NFC view hides the unused designer toolbar, removing the three empty vertical FILE/EXPORT/PRINT blocks.
+- Verify normalization accepts equivalent NDEF URL forms (https://www.dtasl.co / dtasl.co) without changing the working write routine.

@@ -1,0 +1,25 @@
+TABAJA SOLUTION V11.2.3 — COMMAND CENTER DATA FIX
+
+Fixed:
+- Saved projects/templates are now registered in the Command Center.
+- Latest 5 cards now displays saved and printed card activity.
+- Print Current, Print Both, Print Vector and Batch Print create activity records.
+- Today's Cards counts printed cards for the current local date.
+- Templates counts unique projects instead of counting repeated edits twice.
+- Command Center refreshes immediately after save/print and when returning to the page.
+- PWA cache version updated so the fix reaches the installed application.
+
+Protected / unchanged:
+- Zebra print engine
+- Print Current implementation
+- Print Vector implementation
+- Canvas
+- PNG export
+- PDF export
+
+Test:
+1. Open Identity Studio and press New.
+2. Create a card and press Save.
+3. Return to Command Center: Templates should be 1 and the card should appear under Latest 5 cards.
+4. Create another card using New, then Save: Templates should become 2.
+5. Press Print Current: Today's Cards and Print Jobs should increase.

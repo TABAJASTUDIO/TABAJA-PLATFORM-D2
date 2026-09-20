@@ -1,0 +1,8 @@
+Tabaja Solution V12.9.3.2 — Company Isolation + 7-Day Trial Fix
+- Templates are isolated by company/account.
+- Employees and selected employee are isolated by company/account.
+- Activity/template/card/print-job counters are isolated by company/account.
+- Switching accounts clears the visible designer canvas so the previous company's card cannot leak visually.
+- New locally-created companies receive a 7-day trial with an expiry date.
+- Expired trial accounts are blocked at sign-in and can later be activated by upgrading account data/cloud licensing.
+- Service worker cache bumped so refresh loads this release.

@@ -1,0 +1,8 @@
+Tabaja Solution V12.9.3.12
+- Enforces SUSPENDED and EXPIRED at login.
+- Enforces trial expiry at login and on restored sessions after refresh/reopen.
+- ACTIVE remains unrestricted.
+- Adds +1 Day and +2 Days trial extension controls.
+- Trial extensions add to the current future expiry; if already expired, extend from now.
+- Customer data is preserved when access is blocked.
+- Existing company isolation, feature access, customer branding and cloud guard retained.

@@ -1,0 +1,18 @@
+Tabaja Solution V12.8.4 - NFC Local Writer Stable
+
+Scope:
+- NFC Studio only.
+- No Card Designer, printing, batch, Zebra, templates, employees, canvas, or UI engine changes.
+
+Fix:
+- Removed blocked HTTPS-to-loopback polling from the installed PWA.
+- NFC Studio now launches the reliable same-origin Local NFC Writer.
+- Start-NFC-Bridge.bat automatically opens http://127.0.0.1:8765/studio.
+- Local Writer supports Read, Write Website Link, Verify, and Auto-write.
+
+Usage:
+1. Connect ACS ACR122U.
+2. Run NFC-Bridge\Start-NFC-Bridge.bat.
+3. Keep the black window open.
+4. The Local NFC Writer opens automatically.
+5. Place a card, enter the URL, and press Write Website Link.

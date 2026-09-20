@@ -1,0 +1,22 @@
+TABAJA SOLUTION V11.2.2 — NAVIGATION STABILITY FIX
+
+Fixed:
+- Module content overlay after switching between sidebar pages.
+- Old cached CSS/JS being mixed with the new HTML inside the installed PWA.
+- Navigation now enforces exactly one visible workspace at a time.
+- Service worker now uses network-first loading for HTML, CSS and JavaScript.
+- Cache version and all local asset versions updated to V11.2.2.
+
+Protected and unchanged:
+- Zebra print engine
+- Print Current
+- Print Vector
+- Print Front + Back
+- Canvas
+- PNG export
+- PDF export
+
+First launch note:
+The new service worker should activate automatically. If the already-installed app
+shows the old screen on the very first opening only, close it completely and reopen it.
+After V11.2.2 activates, normal navigation must work without Ctrl+Shift+R or Ctrl+F5.

@@ -1,0 +1,18 @@
+TABaja Solution V12.8.1 — Practical Workspace Fix
+
+Changed:
+- Larger, more visible card canvas
+- Larger text across Identity Studio
+- Higher contrast for Layers and Properties
+- Narrower left/right panels
+- Shorter top header and toolbar
+- Clear white controls with dark readable text
+- Less scrolling and wasted spacing
+
+Untouched:
+- Zebra print engine
+- Print Current / Front + Back / Vector Print
+- Canvas rendering logic
+- PNG export
+- PDF export
+- Batch printing

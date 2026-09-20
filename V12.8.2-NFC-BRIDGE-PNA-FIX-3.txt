@@ -1,0 +1,12 @@
+Tabaja Solution V12.8.2 - NFC Bridge PNA Fix 3
+
+Scope: NFC only. No other project pages or features were changed.
+
+Changes:
+- Added Access-Control-Allow-Private-Network: true to the local bridge.
+- Added proper OPTIONS preflight handling and CORS response headers.
+- NFC Studio now marks requests as targetAddressSpace: loopback for current Chromium Local Network Access rules.
+- Bumped NFC script and service-worker cache versions.
+
+Run NFC-Bridge\Start-NFC-Bridge.bat and keep the PowerShell window open.
+The browser may show a Local network access permission prompt the first time; choose Allow.

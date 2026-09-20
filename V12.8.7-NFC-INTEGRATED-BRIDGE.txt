@@ -1,0 +1,16 @@
+TABaja Solution V12.8.7 — Integrated NFC Bridge
+
+Scope: NFC Studio and NFC-Bridge only. No Card Designer, Batch Printing, Zebra, template, employee, or print-engine files were changed.
+
+Changes:
+- NFC Studio connects to the local writer through secure window messaging, avoiding Edge loopback blocking.
+- Bridge status, reader status, card UID, Read, Write, Verify and Auto-write are reflected inside NFC Studio.
+- Bridge uses port 8766.
+- URL verification normalizes protocol, www and trailing slash differences.
+- Write verification retries before reporting a mismatch.
+
+Use:
+1. Run NFC-Bridge\Start-NFC-Bridge.bat.
+2. Open NFC Studio.
+3. Press Connect NFC Bridge once. Keep the small local writer window open or minimized.
+4. Work from NFC Studio.

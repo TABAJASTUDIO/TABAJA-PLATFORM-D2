@@ -1,0 +1,17 @@
+TABAJA SOLUTION V12.7.1 — STEP 2 VISUAL REFINEMENT
+
+Changed:
+- Compact premium header and toolbar
+- Reduced unused white space
+- Stronger TS visual identity
+- Refined sidebar proportions and navigation spacing
+- More compact hero and quick actions
+- Improved collection cards and Elements Library density
+- Updated visible version to 12.7.1
+
+Protected / unchanged:
+- Zebra print engine
+- Print Current / Front + Back / Vector Print
+- Canvas rendering
+- PNG export
+- PDF export

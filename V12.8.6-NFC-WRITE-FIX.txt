@@ -1,0 +1,9 @@
+Tabaja Solution V12.8.6 — NFC Write Fix
+
+- Fixed PowerShell throw syntax in Write Website Link verification.
+- Local NFC Bridge now uses port 8766 to avoid conflict with an older bridge still listening on 8765.
+- Updated NFC Studio and PWA cache references only.
+- No Card Designer, printing, batch, Zebra, or other project modules were changed.
+
+Run: NFC-Bridge\Start-NFC-Bridge.bat
+Local writer: http://127.0.0.1:8766/studio

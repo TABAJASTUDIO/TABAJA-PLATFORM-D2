@@ -1,0 +1,10 @@
+TABAJA SOLUTION V12.9.3.10 — CUSTOMER BRAND CLEAN
+
+Customer accounts only:
+- Sidebar branding shortened to TABAJA SOLUTION.
+- Browser/app title shortened to Tabaja Solution.
+- Page subtitle shortened to Tabaja Solution.
+- Internal version badge hidden from customers.
+
+Tabaja Admin keeps admin branding/version context.
+No changes to Trial, Company Manager, company isolation, NFC or Batch access logic.

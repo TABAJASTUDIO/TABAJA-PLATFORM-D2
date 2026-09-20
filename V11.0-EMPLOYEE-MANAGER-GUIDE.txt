@@ -1,0 +1,20 @@
+TABAJA CARD DESIGNER V11.0 — EMPLOYEE MANAGER
+
+WHAT IS NEW
+- New Employees workspace in the main navigation.
+- Add, edit, delete and search employee records.
+- Employee photo, ID, name, department, job title, company, phone, email, issue/expiry dates, status and notes.
+- Local browser storage for safe testing before cloud sync.
+- Employee statistics and status filtering.
+- JSON backup export/import.
+- Use in Designer stores the selected employee for the next mapping phase.
+
+IMPORTANT
+The existing Card Designer, Canvas, Zebra settings, PDF/PNG export and all stable print buttons were not rewritten by this release. Employee Manager is loaded as a separate module: employee-manager.js.
+
+TEST
+1. Upload all files to GitHub Pages.
+2. Wait for the PWA update prompt or close/reopen the installed app.
+3. Open Employees from the navigation.
+4. Add a test employee, edit it, search it and export a backup.
+5. Confirm Print Current (Stable) still works from Card Designer.

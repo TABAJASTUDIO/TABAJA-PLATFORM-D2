@@ -1,0 +1,7 @@
+Tabaja Solution V12.9.3.13 — Samsung LAN
+
+- NFC Bridge listens on PC + private LAN on port 8766.
+- Start-NFC-Bridge.bat requests Administrator permission and opens Windows Firewall port 8766 on Private networks.
+- Console prints Samsung / LAN URL automatically.
+- :8766 is recognized as local bridge mode on PC and Samsung.
+- Trial enforcement, company isolation, access add-ons, customer branding and cloud guard preserved.

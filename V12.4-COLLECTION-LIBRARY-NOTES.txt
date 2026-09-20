@@ -1,0 +1,7 @@
+Tabaja Solution V12.4 — Collection Library
+
+- Card Design Center now opens with commercial collection covers.
+- Added collection detail pages and card-type navigation.
+- Government includes ready Government ID, Driver Licence and Residence Permit paths.
+- Planned card types are clearly labelled and disabled; no false template counts.
+- Existing Zebra, canvas, PNG, PDF and print engines were not changed.

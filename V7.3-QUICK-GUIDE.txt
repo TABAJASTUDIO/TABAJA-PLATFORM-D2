@@ -1,0 +1,17 @@
+TABAJA CARD DESIGNER V7.3 STABILITY
+
+FIXED
+1. Missing employee photo no longer reuses the previous employee photo.
+2. When a company logo is matched, the company name text is hidden.
+3. Batch backgrounds reset on every record and can be matched from a folder.
+4. Batch output renders at 2× resolution for sharper small text.
+5. Pre-flight Check reports missing photos and unmatched logos/backgrounds.
+6. Batch print uses a small edge overscan to reduce white borders on Zebra ZC300.
+
+BACKGROUND MATCHING
+- Add a Background column to Excel, e.g. B7S-BG.jpg
+- Upload the Card Backgrounds folder.
+- Or name the background after the company, e.g. B7S.jpg
+
+IMPORTANT PRINT SETTING
+Choose Actual Size / 100% in the print dialog. Disable browser headers and footers.

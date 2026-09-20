@@ -1,0 +1,8 @@
+Tabaja Solution V12.8.9 — NFC Real Integration
+
+Only NFC files changed.
+- Main NFC Studio buttons now control the local bridge window through secure postMessage.
+- No direct GitHub/PWA fetch to localhost is used, avoiding Edge Local Network Access blocking.
+- Keep the local bridge window open or minimized after pressing Connect NFC Bridge once.
+- Read, Write, Verify and Auto-write run from the main Tabaja NFC Studio page.
+- Bridge uses port 8766.

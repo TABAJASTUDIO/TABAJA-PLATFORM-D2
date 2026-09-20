@@ -1,0 +1,8 @@
+Tabaja Solution V12.9.3.8 — Customer UI Cleanup
+
+- Removed visible test/admin credentials from Sign In page.
+- Admin login logic and account credentials remain unchanged.
+- FILE / EXPORT / PRINT production toolbar is hidden on Command Center, Card Design Center, Employee Center, Print Center, Reports and NFC Studio.
+- Production toolbar remains available inside production/design workspaces where its actions are relevant.
+- Company isolation, 5-day trial control, NFC access and Batch access are unchanged.
+- PWA cache version bumped to force the updated interface.
