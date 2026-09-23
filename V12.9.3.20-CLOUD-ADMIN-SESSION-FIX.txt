@@ -1,0 +1,10 @@
+Tabaja Solution V12.9.3.20
+
+Fixes:
+- Cloud Admin identity is now derived from the authenticated Supabase Admin user ID/email, not the obsolete local username "admin".
+- Obsolete local admin credentials are disabled whenever Cloud mode is configured.
+- Startup restores and validates the live Supabase session before opening the app, preventing stale local Admin/customer sessions.
+- Admin always receives all paid modules (NFC, Batch, Templates, Print Quality, Zebra).
+- Company Manager loads cloud companies only under the authenticated Supabase Admin session.
+- Existing companies are not recreated or deleted.
+- PWA cache and visible version bumped to 12.9.3.20.

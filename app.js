@@ -24,7 +24,7 @@ let currentSide = "front";
 let pendingImageRole = "image";
 let cropMode = false;
 
-const defaultAccount = { company: "Tabaja Solution", owner: "Tabaja Admin", email: "admin", country: "Sierra Leone", phone: "", plan: "Professional", features: { nfc: true, batch: true, templates: true, printQuality: true, zebra: true } };
+const defaultAccount = { company: "Tabaja Solution", owner: "Tabaja Admin", email: "admin", country: "Sierra Leone", phone: "", plan: "Professional", previewAdmin: true, features: { nfc: true, batch: true, templates: true, printQuality: true, zebra: true } };
 function accountId(account) {
   return String(account?.companyId || account?.id || account?.email || account?.company || "default")
     .trim().toLowerCase().replace(/[^a-z0-9]+/g, "_") || "default";
@@ -93,7 +93,7 @@ function tenantKey(base) {
 window.TabajaTenantKey = tenantKey;
 
 function accountFeatures(account = readAccount()) {
-  const isAdmin = accountId(account) === "admin";
+  const isAdmin = isTabajaAdmin(account);
   return {
     nfc: isAdmin || account?.features?.nfc === true,
     batch: isAdmin || account?.features?.batch === true,
@@ -119,7 +119,29 @@ function applyFeatureAccess(account = readAccount()) {
   window.TabajaAccess = { can: feature => Boolean(accountFeatures()[feature]) };
 }
 
-function isTabajaAdmin(account = readAccount()) { return accountId(account) === "admin"; }
+function isTabajaAdmin(account = readAccount()) {
+  const cloudAdminId = String(window.TabajaCloud?.ADMIN_USER_ID || "");
+  return account?.cloudAdmin === true ||
+    (cloudAdminId && String(account?.userId || account?.id || "") === cloudAdminId) ||
+    (!cloudMode() && account?.previewAdmin === true);
+}
+
+function cloudAdminAccount(cloudAccount) {
+  return {
+    company: "Tabaja Solution",
+    owner: cloudAccount?.email || "Tabaja Admin",
+    email: cloudAccount?.email || "",
+    userId: cloudAccount?.userId || window.TabajaCloud?.ADMIN_USER_ID || "",
+    id: cloudAccount?.userId || window.TabajaCloud?.ADMIN_USER_ID || "",
+    country: "Sierra Leone",
+    phone: "",
+    plan: "Professional",
+    status: "ACTIVE",
+    cloud: true,
+    cloudAdmin: true,
+    features: { nfc: true, batch: true, templates: true, printQuality: true, zebra: true }
+  };
+}
 
 function effectiveAccountStatus(account = readAccount()) {
   if (isTabajaAdmin(account)) return "ACTIVE";
@@ -233,7 +255,7 @@ $("loginForm").addEventListener("submit", async e => {
       const cloudAccount = await window.TabajaCloud.signIn(user, pass);
       // Always bind the UI/storage tenant to the authenticated cloud workspace
       // before revealing any page. This prevents stale Admin/customer data leakage.
-      if (cloudAccount?.cloudAdmin) setActiveAccount(defaultAccount);
+      if (cloudAccount?.cloudAdmin) setActiveAccount(cloudAdminAccount(cloudAccount));
       else if (cloudAccount) setActiveAccount(cloudAccount);
       localStorage.setItem(LOGIN_KEY, "1");
       sessionStorage.removeItem(LOGIN_KEY);
@@ -254,13 +276,13 @@ if (matchedAccount) {
   if (accessError) throw new Error(accessError);
 }
 
-const validDefault = user === LOGIN_USER && pass === LOGIN_PASSWORD;
+const validDefault = !cloudMode() && user === LOGIN_USER && pass === LOGIN_PASSWORD;
 const validCreated = Boolean(matchedAccount);
 
 if (!validDefault && !validCreated)
   throw new Error(
     cloudMode()
-      ? "Use your cloud email and password, or the local admin test account."
+      ? "Incorrect cloud email or password."
       : "Incorrect email, username or password."
   );
 
@@ -1256,16 +1278,47 @@ sides.front = snapshot();
 sides.back = snapshot();
 updateCardInfo();
 status("V5.0 VECTOR TEST — stable engine kept, vector PDF added.");
-if (isLoggedIn()) {
-  const startupAccount = readAccount();
-  const startupAccessError = accountAccessError(startupAccount);
-  if (startupAccessError) {
-    localStorage.removeItem(LOGIN_KEY);
-    sessionStorage.removeItem(LOGIN_KEY);
-    showLogin();
-    $("loginError").textContent = startupAccessError;
-  } else showApp();
-} else showLogin();
+async function restoreStartupSession() {
+  if (cloudMode()) {
+    try {
+      const session = await window.TabajaCloud?.getSession?.();
+      if (!session?.user) {
+        localStorage.removeItem(LOGIN_KEY); sessionStorage.removeItem(LOGIN_KEY);
+        localStorage.removeItem(ACTIVE_ACCOUNT_KEY); localStorage.removeItem(ACCOUNT_KEY);
+        showLogin();
+        return;
+      }
+      let account;
+      if (session.user.id === window.TabajaCloud?.ADMIN_USER_ID) {
+        account = cloudAdminAccount({ cloudAdmin: true, userId: session.user.id, email: session.user.email });
+      } else {
+        const workspace = await window.TabajaCloud.loadWorkspace(session.user.id);
+        account = { ...(workspace || {}), owner: session.user.user_metadata?.full_name || session.user.email, email: session.user.email, cloud: true };
+      }
+      setActiveAccount(account);
+      localStorage.setItem(LOGIN_KEY, "1");
+      const accessError = accountAccessError(account);
+      if (accessError) throw new Error(accessError);
+      showApp();
+      return;
+    } catch (error) {
+      localStorage.removeItem(LOGIN_KEY); sessionStorage.removeItem(LOGIN_KEY);
+      localStorage.removeItem(ACTIVE_ACCOUNT_KEY); localStorage.removeItem(ACCOUNT_KEY);
+      showLogin();
+      $("loginError").textContent = error.message || "Please sign in again.";
+      return;
+    }
+  }
+  if (isLoggedIn()) {
+    const startupAccount = readAccount();
+    const startupAccessError = accountAccessError(startupAccount);
+    if (startupAccessError) {
+      localStorage.removeItem(LOGIN_KEY); sessionStorage.removeItem(LOGIN_KEY);
+      showLogin(); $("loginError").textContent = startupAccessError;
+    } else showApp();
+  } else showLogin();
+}
+restoreStartupSession();
 
 
 // ===== V6.1 BETA: Employee Card Builder — working canvas generator =====
