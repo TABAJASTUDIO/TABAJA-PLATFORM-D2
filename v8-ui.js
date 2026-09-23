@@ -38,6 +38,9 @@
   function setView(view) {
     if (view === 'nfc' && window.TabajaAccess && !window.TabajaAccess.can('nfc')) view = 'dashboard';
     if (view === 'batch' && window.TabajaAccess && !window.TabajaAccess.can('batch')) view = 'printcenter';
+    if (view === 'templates' && window.TabajaAccess && !window.TabajaAccess.can('templates')) view = 'dashboard';
+    if (view === 'quality' && window.TabajaAccess && !window.TabajaAccess.can('printQuality')) view = 'printcenter';
+    if (view === 'zebra' && window.TabajaAccess && !window.TabajaAccess.can('zebra')) view = 'printcenter';
     document.body.dataset.v8View = view;
     enforceSingleWorkspace(view);
     // Keep production/design controls out of customer-facing module pages.
@@ -85,16 +88,17 @@
     const testZebra = document.getElementById('zebraTestCard');
     const status = document.getElementById('zebraSettingsStatus');
     const fields = ['zebraOffsetX','zebraOffsetY','zebraBleed'];
-    const saved = JSON.parse(localStorage.getItem('tabaja-zebra-settings') || '{}');
+    const zebraKey = (window.TabajaTenantKey ? window.TabajaTenantKey('tabaja-zebra-settings') : 'tabaja-zebra-settings');
+    const saved = JSON.parse(localStorage.getItem(zebraKey) || '{}');
     fields.forEach(id => { const el=document.getElementById(id); if(el && saved[id] !== undefined) el.value=saved[id]; });
     saveZebra?.addEventListener('click', () => {
       const data={}; fields.forEach(id => data[id]=document.getElementById(id).value);
-      localStorage.setItem('tabaja-zebra-settings', JSON.stringify(data));
+      localStorage.setItem(zebraKey, JSON.stringify(data));
       status.textContent=`Saved: X ${data.zebraOffsetX} mm • Y ${data.zebraOffsetY} mm • Bleed ${data.zebraBleed} mm`;
     });
     resetZebra?.addEventListener('click', () => {
       document.getElementById('zebraOffsetX').value=0; document.getElementById('zebraOffsetY').value=0; document.getElementById('zebraBleed').value=1;
-      localStorage.removeItem('tabaja-zebra-settings'); status.textContent='Default Zebra settings restored.';
+      localStorage.removeItem(zebraKey); status.textContent='Default Zebra settings restored.';
     });
     testZebra?.addEventListener('click', () => {
       setView('designer');

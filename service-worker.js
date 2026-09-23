@@ -1,15 +1,15 @@
-const CACHE_VERSION = 'tabaja-v12.9.3.17-tenant-isolation';
+const CACHE_VERSION = 'tabaja-v12.9.3.18-tenant-isolation';
 const APP_SHELL = [
   './',
   './index.html',
   './style.css?v=12.9.3.14',
-  './app.js?v=12.9.3.17',
-  './cloud.js?v=12.9.3.17',
+  './app.js?v=12.9.3.18',
+  './cloud.js?v=12.9.3.18',
   './v8-ui.js?v=12.9.3.9',
-  './employee-manager.js?v=12.9.3.17',
-  './activity-store.js?v=12.9.3.17',
-  './command-center.js?v=12.9.3.17',
-  './pwa.js?v=12.9.3.17',
+  './employee-manager.js?v=12.9.3.18',
+  './activity-store.js?v=12.9.3.18',
+  './command-center.js?v=12.9.3.18',
+  './pwa.js?v=12.9.3.18',
   './nfc-studio.js?v=12.9.3-local-pwa',
   './manifest.webmanifest',
   './icons/icon-192.png',

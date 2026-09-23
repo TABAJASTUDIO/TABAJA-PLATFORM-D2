@@ -24,7 +24,7 @@ let currentSide = "front";
 let pendingImageRole = "image";
 let cropMode = false;
 
-const defaultAccount = { company: "Tabaja Solution", owner: "Tabaja Admin", email: "admin", country: "Sierra Leone", phone: "", plan: "Professional", features: { nfc: true, batch: true } };
+const defaultAccount = { company: "Tabaja Solution", owner: "Tabaja Admin", email: "admin", country: "Sierra Leone", phone: "", plan: "Professional", features: { nfc: true, batch: true, templates: true, printQuality: true, zebra: true } };
 function accountId(account) {
   return String(account?.companyId || account?.id || account?.email || account?.company || "default")
     .trim().toLowerCase().replace(/[^a-z0-9]+/g, "_") || "default";
@@ -90,19 +90,32 @@ function tenantKey(base) {
   return `${base}__${accountId(readAccount())}`;
 }
 
+window.TabajaTenantKey = tenantKey;
+
 function accountFeatures(account = readAccount()) {
   const isAdmin = accountId(account) === "admin";
   return {
     nfc: isAdmin || account?.features?.nfc === true,
-    batch: isAdmin || account?.features?.batch === true
+    batch: isAdmin || account?.features?.batch === true,
+    templates: isAdmin || account?.features?.templates === true,
+    printQuality: isAdmin || account?.features?.printQuality === true,
+    zebra: isAdmin || account?.features?.zebra === true
   };
 }
 function applyFeatureAccess(account = readAccount()) {
   const features = accountFeatures(account);
   document.body.dataset.nfcAccess = features.nfc ? "1" : "0";
   document.body.dataset.batchAccess = features.batch ? "1" : "0";
+  document.body.dataset.templatesAccess = features.templates ? "1" : "0";
+  document.body.dataset.printQualityAccess = features.printQuality ? "1" : "0";
+  document.body.dataset.zebraAccess = features.zebra ? "1" : "0";
   document.querySelectorAll('[data-feature="nfc"]').forEach(el => { el.hidden = !features.nfc; el.style.display = features.nfc ? "" : "none"; });
   document.querySelectorAll('[data-feature="batch"]').forEach(el => { el.hidden = !features.batch; el.style.display = features.batch ? "" : "none"; });
+  ['templates','printQuality','zebra'].forEach(feature => {
+    document.querySelectorAll(`[data-feature="${feature}"]`).forEach(el => {
+      const allowed = features[feature]; el.hidden = !allowed; el.style.display = allowed ? "" : "none";
+    });
+  });
   window.TabajaAccess = { can: feature => Boolean(accountFeatures()[feature]) };
 }
 
@@ -302,7 +315,7 @@ writeAccount({
   status: "TRIAL",
   createdAt: new Date().toISOString(),
   trialExpiresAt: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toISOString(),
-  features: { nfc: false, batch: false }
+  features: { nfc: false, batch: false, templates: false, printQuality: false, zebra: false }
 });
     }
     localStorage.setItem(LOGIN_KEY, "1"); sessionStorage.removeItem(LOGIN_KEY);
@@ -2312,7 +2325,7 @@ window.TabajaElements = {
       status: String(c.status || 'TRIAL').toUpperCase(),
       trialStartedAt: c.trial_started_at || null,
       trialExpiresAt: c.trial_expires_at || c.licence_expires_at || null,
-      features: { nfc: c.feature_nfc === true, batch: c.feature_batch === true },
+      features: { nfc: c.feature_nfc === true, batch: c.feature_batch === true, templates: c.feature_templates === true, printQuality: c.feature_print_quality === true, zebra: c.feature_zebra === true },
       cloud: true
     }));
   }
@@ -2331,6 +2344,9 @@ window.TabajaElements = {
     $("companyManagerStatus").value = status;
     $("companyFeatureNfc").checked = a.features?.nfc === true;
     $("companyFeatureBatch").checked = a.features?.batch === true;
+    $("companyFeatureTemplates").checked = a.features?.templates === true;
+    $("companyFeaturePrintQuality").checked = a.features?.printQuality === true;
+    $("companyFeatureZebra").checked = a.features?.zebra === true;
     const left = daysLeft(a);
     const trialDetails = a.trialStartedAt || a.trialExpiresAt
       ? `<div class="company-trial-details"><div><span>Trial started</span><b>${fmtDate(a.trialStartedAt)}</b></div><div><span>Trial expires</span><b>${fmtDate(a.trialExpiresAt)}</b></div><div><span>Days remaining</span><b>${left === null ? "—" : left}</b></div></div>`
@@ -2349,9 +2365,12 @@ window.TabajaElements = {
   // enabled separately after its Admin UPDATE RLS policy is confirmed.
   function updateAccount(mutator){
     if (cloudMode()) {
-      msg.className = "company-manager-message error";
-      msg.textContent = "Cloud companies are connected read-only for this test. Admin editing will be enabled after the list is verified.";
-      return null;
+      const id = select.value, i = cloudCompanies.findIndex(a => accountId(a) === id);
+      if (i < 0) return null;
+      const updated = {...cloudCompanies[i], features:{...(cloudCompanies[i].features||{})}};
+      mutator(updated);
+      cloudCompanies[i] = updated;
+      return updated;
     }
     const list = readAccounts(), id = select.value, i = list.findIndex(a => accountId(a) === id);
     if (i < 0) return null;
@@ -2388,5 +2407,21 @@ window.TabajaElements = {
   $("companyManagerPlus1")?.addEventListener("click",()=>extendTrial(1));
   $("companyManagerPlus2")?.addEventListener("click",()=>extendTrial(2));
   $("companyManagerActivate")?.addEventListener("click",()=>{ const a=updateAccount(a=>{a.status="ACTIVE";a.plan="Standard";a.trialExpiresAt=null;}); if(a){renderSelected();msg.className="company-manager-message ok";msg.textContent="Paid account activated. Data preserved.";} });
-  $("companyManagerSave")?.addEventListener("click",()=>{ const a=updateAccount(a=>{a.status=$("companyManagerStatus").value;a.features.nfc=$("companyFeatureNfc").checked;a.features.batch=$("companyFeatureBatch").checked;if(a.status==="ACTIVE")a.trialExpiresAt=null;}); if(a){renderSelected();msg.className="company-manager-message ok";msg.textContent="Company access saved.";} });
+  $("companyManagerSave")?.addEventListener("click", async ()=>{
+    const a=updateAccount(a=>{
+      a.status=$("companyManagerStatus").value;
+      a.features.nfc=$("companyFeatureNfc").checked; a.features.batch=$("companyFeatureBatch").checked;
+      a.features.templates=$("companyFeatureTemplates").checked; a.features.printQuality=$("companyFeaturePrintQuality").checked; a.features.zebra=$("companyFeatureZebra").checked;
+      if(a.status==="ACTIVE")a.trialExpiresAt=null;
+    });
+    if(!a) return;
+    if(cloudMode()){
+      try {
+        const supabase=window.TabajaCloud?.getClient?.();
+        const payload={status:String(a.status||'active').toLowerCase(),feature_nfc:a.features.nfc===true,feature_batch:a.features.batch===true,feature_templates:a.features.templates===true,feature_print_quality:a.features.printQuality===true,feature_zebra:a.features.zebra===true};
+        const {error}=await supabase.from('companies').update(payload).eq('id',a.id); if(error) throw error;
+      } catch(error){ msg.className='company-manager-message error'; msg.textContent=error.message||'Unable to save cloud access.'; return; }
+    }
+    renderSelected(); msg.className="company-manager-message ok"; msg.textContent="Company access saved.";
+  });
 })();
