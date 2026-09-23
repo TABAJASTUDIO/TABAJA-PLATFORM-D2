@@ -1,4 +1,4 @@
-﻿const CARD = {
+const CARD = {
   landscape: { w: 1011, h: 638, mmW: 85.6, mmH: 53.98 },
   portrait:  { w: 638, h: 1011, mmW: 53.98, mmH: 85.6 }
 };
@@ -26,7 +26,7 @@ let cropMode = false;
 
 const defaultAccount = { company: "Tabaja Solution", owner: "Tabaja Admin", email: "admin", country: "Sierra Leone", phone: "", plan: "Professional", features: { nfc: true, batch: true } };
 function accountId(account) {
-  return String(account?.id || account?.email || account?.company || "default")
+  return String(account?.companyId || account?.id || account?.email || account?.company || "default")
     .trim().toLowerCase().replace(/[^a-z0-9]+/g, "_") || "default";
 }
 
@@ -217,7 +217,11 @@ $("loginForm").addEventListener("submit", async e => {
   setAuthBusy("loginForm", true, "Signing in…");
   try {
     if (cloudMode() && user.includes("@")) {
-      await window.TabajaCloud.signIn(user, pass);
+      const cloudAccount = await window.TabajaCloud.signIn(user, pass);
+      // Always bind the UI/storage tenant to the authenticated cloud workspace
+      // before revealing any page. This prevents stale Admin/customer data leakage.
+      if (cloudAccount?.cloudAdmin) setActiveAccount(defaultAccount);
+      else if (cloudAccount) setActiveAccount(cloudAccount);
       localStorage.setItem(LOGIN_KEY, "1");
       sessionStorage.removeItem(LOGIN_KEY);
       showApp();
@@ -275,7 +279,8 @@ $("registerForm").addEventListener("submit", async e => {
   setAuthBusy("registerForm", true, "Creating company…");
   try {
     if (cloudMode()) {
-      await window.TabajaCloud.signUp(payload);
+      const cloudAccount = await window.TabajaCloud.signUp(payload);
+      if (cloudAccount) setActiveAccount(cloudAccount);
     } else {
       const exists = readAccounts().some(a =>
   String(a.email || "").toLowerCase() === payload.email
@@ -317,12 +322,56 @@ $("forgotForm").addEventListener("submit", async e => {
   } catch (error) { $("forgotMessage").textContent = error.message || "Unable to send reset email."; }
 });
 
+function showPasswordRecovery() {
+  $("appShell")?.classList.add("hidden");
+  $("loginScreen")?.classList.remove("hidden");
+  $("loginForm")?.classList.add("hidden");
+  $("registerForm")?.classList.add("hidden");
+  $("forgotForm")?.classList.add("hidden");
+  $("recoveryForm")?.classList.remove("hidden");
+  $("showLoginTab")?.classList.remove("active");
+  $("showRegisterTab")?.classList.remove("active");
+  if ($("recoveryMessage")) $("recoveryMessage").textContent = "Recovery link verified.";
+}
+
+window.TabajaCloud?.getClient()?.auth.onAuthStateChange((event) => {
+  if (event === "PASSWORD_RECOVERY") showPasswordRecovery();
+});
+
+$("recoveryForm")?.addEventListener("submit", async e => {
+  e.preventDefault();
+  const message = $("recoveryMessage");
+  const password = $("recoveryPassword").value;
+  const confirm = $("recoveryPasswordConfirm").value;
+  message.textContent = "";
+  try {
+    if (password.length < 8) throw new Error("Password must be at least 8 characters.");
+    if (password !== confirm) throw new Error("Passwords do not match.");
+    await window.TabajaCloud.updatePassword(password);
+    message.textContent = "Password updated successfully. You can now sign in.";
+    await window.TabajaCloud.signOut();
+    history.replaceState({}, document.title, location.pathname);
+    setTimeout(() => {
+      $("recoveryForm").classList.add("hidden");
+      $("loginForm").classList.remove("hidden");
+      $("showLoginTab")?.classList.add("active");
+      $("recoveryPassword").value = "";
+      $("recoveryPasswordConfirm").value = "";
+    }, 900);
+  } catch (error) {
+    message.textContent = error.message || "Unable to update password.";
+  }
+});
+
 $("logoutBtn").onclick = async () => {
   try { await window.TabajaCloud?.signOut(); } catch {}
 
   localStorage.removeItem(LOGIN_KEY);
   sessionStorage.removeItem(LOGIN_KEY);
   localStorage.removeItem(ACTIVE_ACCOUNT_KEY);
+  // Do not leave the previous cloud workspace as a fallback account after logout.
+  // Local preview accounts remain safely stored in ACCOUNTS_KEY.
+  localStorage.removeItem(ACCOUNT_KEY);
   try { window.TabajaResetCommandCenter?.(); } catch (_) {}
 
   showLogin();
@@ -2233,14 +2282,48 @@ window.TabajaElements = {
 (function setupCompanyManager(){
   const modal = $("companyManagerModal"), select = $("companyManagerSelect"), msg = $("companyManagerMessage");
   if (!modal || !select) return;
-  const customerAccounts = () => readAccounts().filter(a => accountId(a) !== "admin");
+
+  let cloudCompanies = [];
+  const customerAccounts = () => cloudMode() ? cloudCompanies : readAccounts().filter(a => accountId(a) !== "admin");
   const byId = id => customerAccounts().find(a => accountId(a) === id);
+
+  async function loadCloudCompanies(){
+    if (!cloudMode()) return;
+    const supabase = window.TabajaCloud?.getClient?.();
+    if (!supabase) throw new Error("Cloud is not configured.");
+
+    const session = await window.TabajaCloud?.getSession?.();
+    if (!session || session.user?.id !== window.TabajaCloud?.ADMIN_USER_ID) {
+      throw new Error("Sign out, then sign in with the Tabaja Cloud Admin email and password.");
+    }
+
+    const { data, error } = await supabase
+      .from('companies')
+      .select('*')
+      .order('created_at', { ascending: false });
+    if (error) throw error;
+
+    cloudCompanies = (data || []).map(c => ({
+      id: c.id,
+      company: c.name,
+      country: c.country || '',
+      phone: c.phone || '',
+      plan: c.plan || 'Professional Trial',
+      status: String(c.status || 'TRIAL').toUpperCase(),
+      trialStartedAt: c.trial_started_at || null,
+      trialExpiresAt: c.trial_expires_at || c.licence_expires_at || null,
+      features: { nfc: c.feature_nfc === true, batch: c.feature_batch === true },
+      cloud: true
+    }));
+  }
+
   const daysLeft = a => {
     if (!a?.trialExpiresAt) return null;
     return Math.max(0, Math.ceil((new Date(a.trialExpiresAt).getTime() - Date.now()) / 86400000));
   };
   const effectiveStatus = a => effectiveAccountStatus(a);
   const fmtDate = value => value ? new Date(value).toLocaleString() : "—";
+
   function renderSelected(){
     const a = byId(select.value);
     if (!a) { $("companyManagerSummary").innerHTML = "No customer companies yet."; return; }
@@ -2254,17 +2337,40 @@ window.TabajaElements = {
       : "";
     $("companyManagerSummary").innerHTML = `<b>${a.company || "Company"}</b><br>${a.owner || ""}<br>${a.email || ""}<br>Plan: ${a.plan || "Standard"}<br>Status: <b>${status}</b>${trialDetails}`;
   }
-  function populate(){
+
+  async function populate(){
+    if (cloudMode()) await loadCloudCompanies();
     const list = customerAccounts();
     select.innerHTML = list.length ? list.map(a => `<option value="${accountId(a)}">${a.company || a.email}</option>`).join("") : '<option value="">No customer companies</option>';
     renderSelected();
   }
+
+  // Keep the proven local-preview editing path unchanged. Cloud editing will be
+  // enabled separately after its Admin UPDATE RLS policy is confirmed.
   function updateAccount(mutator){
+    if (cloudMode()) {
+      msg.className = "company-manager-message error";
+      msg.textContent = "Cloud companies are connected read-only for this test. Admin editing will be enabled after the list is verified.";
+      return null;
+    }
     const list = readAccounts(), id = select.value, i = list.findIndex(a => accountId(a) === id);
     if (i < 0) return null;
     const updated = {...list[i], features:{...(list[i].features||{})}}; mutator(updated); list[i]=updated; saveAccounts(list); return updated;
   }
-  $("companyManagerBtn")?.addEventListener("click",()=>{ if(!isTabajaAdmin()) return; populate(); msg.textContent=""; modal.classList.remove("hidden"); });
+
+  $("companyManagerBtn")?.addEventListener("click", async ()=>{
+    if(!isTabajaAdmin()) return;
+    msg.textContent="";
+    modal.classList.remove("hidden");
+    try { await populate(); }
+    catch (error) {
+      cloudCompanies = [];
+      select.innerHTML = '<option value="">Cloud Admin sign-in required</option>';
+      $("companyManagerSummary").innerHTML = "Unable to load cloud companies.";
+      msg.className="company-manager-message error";
+      msg.textContent=error.message || "Unable to load companies.";
+    }
+  });
   $("closeCompanyManagerBtn")?.addEventListener("click",()=>modal.classList.add("hidden"));
   modal.addEventListener("click",e=>{ if(e.target===modal) modal.classList.add("hidden"); });
   select.addEventListener("change",renderSelected);

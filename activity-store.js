@@ -18,7 +18,7 @@ function activeTenantId() {
     );
 
     return String(
-      account?.id || account?.email || account?.company || 'default'
+      account?.companyId || account?.id || account?.email || account?.company || 'default'
     )
       .trim()
       .toLowerCase()

@@ -3,6 +3,7 @@
 
   const CONFIG_KEY = 'tabaja_cloud_config_v101';
   const ACCOUNT_KEY = 'tabaja_card_designer_account_v10';
+  const ADMIN_USER_ID = '74cdabd7-4fb6-4016-bf68-cfac6bb17c14';
   let client = null;
 
   function readConfig() {
@@ -49,7 +50,7 @@
     if (!supabase) return null;
     const { data, error } = await supabase
       .from('company_members')
-      .select('role, companies(id,name,country,phone,plan,status,licence_expires_at,max_users)')
+      .select('role, companies(id,name,country,phone,plan,status,licence_expires_at,max_users,trial_started_at,trial_expires_at,feature_nfc,feature_batch)')
       .eq('user_id', userId)
       .limit(1)
       .maybeSingle();
@@ -59,11 +60,15 @@
     return {
       company: company.name,
       companyId: company.id,
+      id: company.id,
       country: company.country || '',
       phone: company.phone || '',
       plan: company.plan || 'Professional',
       status: company.status || 'active',
       licenceExpiresAt: company.licence_expires_at || null,
+      trialStartedAt: company.trial_started_at || null,
+      trialExpiresAt: company.trial_expires_at || company.licence_expires_at || null,
+      features: { nfc: company.feature_nfc === true, batch: company.feature_batch === true },
       maxUsers: company.max_users || 1,
       role: data.role || 'owner'
     };
@@ -74,6 +79,13 @@
     if (!supabase) throw new Error('Cloud is not configured. Open Cloud Setup first.');
     const { data, error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) throw error;
+
+    // Tabaja Cloud Admin: keep the Supabase session for RLS, but do not
+    // treat the admin as a customer company or create/load a workspace.
+    if (data.user?.id === ADMIN_USER_ID) {
+      return { cloudAdmin: true, userId: data.user.id, email: data.user.email, cloud: true };
+    }
+
     const workspace = await loadWorkspace(data.user.id);
     const account = {
       ...(workspace || {}),
@@ -121,6 +133,7 @@
     const account = {
       company: company.name,
       companyId: company.id,
+      id: company.id,
       owner: payload.owner,
       email: payload.email,
       country: payload.country,
@@ -138,6 +151,15 @@
   async function signOut() {
     const supabase = getClient();
     if (supabase) await supabase.auth.signOut();
+  }
+
+  async function updatePassword(password) {
+    const supabase = getClient();
+    if (!supabase) throw new Error('Cloud is not configured.');
+    if (String(password || '').length < 8) throw new Error('Password must be at least 8 characters.');
+    const { data, error } = await supabase.auth.updateUser({ password });
+    if (error) throw error;
+    return data.user || null;
   }
 
   async function resetPassword(email) {
@@ -159,6 +181,6 @@
 
   window.TabajaCloud = {
     readConfig, saveConfig, isConfigured, getClient, getSession,
-    loadWorkspace, signIn, signUp, signOut, resetPassword, connectionTest
+    loadWorkspace, signIn, signUp, signOut, resetPassword, updatePassword, connectionTest, ADMIN_USER_ID
   };
 })();

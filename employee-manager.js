@@ -7,7 +7,7 @@
       const activeId = localStorage.getItem('tabaja_card_designer_active_account_v11');
       if (activeId) return activeId;
       const account = JSON.parse(localStorage.getItem('tabaja_card_designer_account_v10') || 'null');
-      return String(account?.id || account?.email || account?.company || 'default').trim().toLowerCase().replace(/[^a-z0-9]+/g, '_') || 'default';
+      return String(account?.companyId || account?.id || account?.email || account?.company || 'default').trim().toLowerCase().replace(/[^a-z0-9]+/g, '_') || 'default';
     } catch (_) { return 'default'; }
   }
   const tenantKey = (key) => `${key}__${activeTenantId()}`;
@@ -297,4 +297,10 @@
   }
 
   window.addEventListener('DOMContentLoaded', init);
+  // Reload the in-memory employee list immediately when the active company changes.
+  // Without this, the table could keep showing the previous company's employees.
+  window.addEventListener('tabaja:account-changed', () => {
+    loadEmployees();
+    renderEmployees();
+  });
 })();
