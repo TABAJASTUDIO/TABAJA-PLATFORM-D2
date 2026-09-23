@@ -185,7 +185,7 @@ function togglePassword(inputId, button) {
   input.type = show ? "text" : "password"; button.textContent = show ? "Hide" : "Show";
 }
 $("showLoginTab").onclick = () => showAuthView("login");
-$("showRegisterTab").onclick = () => showAuthView("register");
+$("showRegisterTab").onclick = () => { if (isTabajaAdmin() && isLoggedIn()) showAuthView("register"); };
 $("forgotPasswordBtn").onclick = () => showAuthView("forgot");
 $("backToLoginBtn").onclick = () => showAuthView("login");
 $("toggleLoginPassword").onclick = e => togglePassword("loginPassword", e.currentTarget);
@@ -292,7 +292,16 @@ $("registerForm").addEventListener("submit", async e => {
   setAuthBusy("registerForm", true, "Creating company…");
   try {
     if (cloudMode()) {
+      const creatingFromAdmin = isTabajaAdmin() && isLoggedIn();
       const cloudAccount = await window.TabajaCloud.signUp(payload);
+      if (creatingFromAdmin) {
+        await window.TabajaCloud.signOut();
+        localStorage.removeItem(LOGIN_KEY); sessionStorage.removeItem(LOGIN_KEY);
+        localStorage.removeItem(ACTIVE_ACCOUNT_KEY); localStorage.removeItem(ACCOUNT_KEY);
+        showLogin();
+        $("loginError").textContent = `Company ${payload.company} created. Sign in as Admin to manage its access.`;
+        return;
+      }
       if (cloudAccount) setActiveAccount(cloudAccount);
     } else {
       const exists = readAccounts().some(a =>
@@ -2389,6 +2398,15 @@ window.TabajaElements = {
       msg.className="company-manager-message error";
       msg.textContent=error.message || "Unable to load companies.";
     }
+  });
+  $("companyManagerCreate")?.addEventListener("click",()=>{
+    if(!isTabajaAdmin()) return;
+    modal.classList.add("hidden");
+    $("appShell")?.classList.add("hidden");
+    $("loginScreen")?.classList.remove("hidden");
+    showAuthView("register");
+    document.querySelector('.auth-tabs')?.classList.add('hidden');
+    $("registerError").textContent = "Admin company creation. After creation, sign back in as Admin to manage access.";
   });
   $("closeCompanyManagerBtn")?.addEventListener("click",()=>modal.classList.add("hidden"));
   modal.addEventListener("click",e=>{ if(e.target===modal) modal.classList.add("hidden"); });

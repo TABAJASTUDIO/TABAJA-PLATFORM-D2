@@ -1,0 +1,11 @@
+Tabaja Solution V12.9.3.19
+- Public PWA login shows Sign In only; Create Company is hidden.
+- Create Company entry moved inside Admin Company Manager.
+- Templates, Print Quality, Zebra Settings use the same fail-closed paid-access visibility model as NFC and Batch.
+- Template navigation, gallery, save/load controls and dashboard/report template counters are protected by the Templates permission.
+- Admin always sees all five paid modules. Customers see only modules explicitly enabled for their company.
+- Company feature flags remain cloud-backed in Supabase.
+- No service_role key is embedded in the PWA.
+- Cache bumped to V12.9.3.19.
+
+Supabase note: run SUPABASE-V12.9.3.18-FEATURE-ACCESS.sql once if the three feature columns/policy have not already been added.

@@ -1,9 +1,9 @@
-const CACHE_VERSION = 'tabaja-v12.9.3.18-tenant-isolation';
+const CACHE_VERSION = 'tabaja-v12.9.3.19-paid-access-admin-create';
 const APP_SHELL = [
   './',
   './index.html',
-  './style.css?v=12.9.3.14',
-  './app.js?v=12.9.3.18',
+  './style.css?v=12.9.3.19',
+  './app.js?v=12.9.3.19',
   './cloud.js?v=12.9.3.18',
   './v8-ui.js?v=12.9.3.9',
   './employee-manager.js?v=12.9.3.18',
