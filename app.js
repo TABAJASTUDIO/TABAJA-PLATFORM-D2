@@ -24,7 +24,7 @@ let currentSide = "front";
 let pendingImageRole = "image";
 let cropMode = false;
 
-const defaultAccount = { company: "Tabaja Solution", owner: "Tabaja Admin", email: "admin", country: "Sierra Leone", phone: "", plan: "Professional", previewAdmin: true, features: { nfc: true, batch: true, templates: true, printQuality: true, zebra: true } };
+const defaultAccount = { company: "Tabaja Solution", owner: "Tabaja Admin", email: "admin", country: "Sierra Leone", phone: "", plan: "Professional", features: { nfc: true, batch: true, templates: true, quality: true, zebra: true } };
 function accountId(account) {
   return String(account?.companyId || account?.id || account?.email || account?.company || "default")
     .trim().toLowerCase().replace(/[^a-z0-9]+/g, "_") || "default";
@@ -90,15 +90,13 @@ function tenantKey(base) {
   return `${base}__${accountId(readAccount())}`;
 }
 
-window.TabajaTenantKey = tenantKey;
-
 function accountFeatures(account = readAccount()) {
   const isAdmin = isTabajaAdmin(account);
   return {
     nfc: isAdmin || account?.features?.nfc === true,
     batch: isAdmin || account?.features?.batch === true,
     templates: isAdmin || account?.features?.templates === true,
-    printQuality: isAdmin || account?.features?.printQuality === true,
+    quality: isAdmin || account?.features?.quality === true,
     zebra: isAdmin || account?.features?.zebra === true
   };
 }
@@ -107,41 +105,17 @@ function applyFeatureAccess(account = readAccount()) {
   document.body.dataset.nfcAccess = features.nfc ? "1" : "0";
   document.body.dataset.batchAccess = features.batch ? "1" : "0";
   document.body.dataset.templatesAccess = features.templates ? "1" : "0";
-  document.body.dataset.printQualityAccess = features.printQuality ? "1" : "0";
+  document.body.dataset.qualityAccess = features.quality ? "1" : "0";
   document.body.dataset.zebraAccess = features.zebra ? "1" : "0";
   document.querySelectorAll('[data-feature="nfc"]').forEach(el => { el.hidden = !features.nfc; el.style.display = features.nfc ? "" : "none"; });
   document.querySelectorAll('[data-feature="batch"]').forEach(el => { el.hidden = !features.batch; el.style.display = features.batch ? "" : "none"; });
-  ['templates','printQuality','zebra'].forEach(feature => {
-    document.querySelectorAll(`[data-feature="${feature}"]`).forEach(el => {
-      const allowed = features[feature]; el.hidden = !allowed; el.style.display = allowed ? "" : "none";
-    });
-  });
+  for (const feature of ["templates", "quality", "zebra"]) {
+    document.querySelectorAll(`[data-feature="${feature}"]`).forEach(el => { el.hidden = !features[feature]; el.style.display = features[feature] ? "" : "none"; });
+  }
   window.TabajaAccess = { can: feature => Boolean(accountFeatures()[feature]) };
 }
 
-function isTabajaAdmin(account = readAccount()) {
-  const cloudAdminId = String(window.TabajaCloud?.ADMIN_USER_ID || "");
-  return account?.cloudAdmin === true ||
-    (cloudAdminId && String(account?.userId || account?.id || "") === cloudAdminId) ||
-    (!cloudMode() && account?.previewAdmin === true);
-}
-
-function cloudAdminAccount(cloudAccount) {
-  return {
-    company: "Tabaja Solution",
-    owner: cloudAccount?.email || "Tabaja Admin",
-    email: cloudAccount?.email || "",
-    userId: cloudAccount?.userId || window.TabajaCloud?.ADMIN_USER_ID || "",
-    id: cloudAccount?.userId || window.TabajaCloud?.ADMIN_USER_ID || "",
-    country: "Sierra Leone",
-    phone: "",
-    plan: "Professional",
-    status: "ACTIVE",
-    cloud: true,
-    cloudAdmin: true,
-    features: { nfc: true, batch: true, templates: true, printQuality: true, zebra: true }
-  };
-}
+function isTabajaAdmin(account = readAccount()) { return account?.cloudAdmin === true || accountId(account) === "admin"; }
 
 function effectiveAccountStatus(account = readAccount()) {
   if (isTabajaAdmin(account)) return "ACTIVE";
@@ -207,7 +181,7 @@ function togglePassword(inputId, button) {
   input.type = show ? "text" : "password"; button.textContent = show ? "Hide" : "Show";
 }
 $("showLoginTab").onclick = () => showAuthView("login");
-$("showRegisterTab").onclick = () => { if (isTabajaAdmin() && isLoggedIn()) showAuthView("register"); };
+$("showRegisterTab")?.addEventListener("click", () => showAuthView("register"));
 $("forgotPasswordBtn").onclick = () => showAuthView("forgot");
 $("backToLoginBtn").onclick = () => showAuthView("login");
 $("toggleLoginPassword").onclick = e => togglePassword("loginPassword", e.currentTarget);
@@ -255,8 +229,9 @@ $("loginForm").addEventListener("submit", async e => {
       const cloudAccount = await window.TabajaCloud.signIn(user, pass);
       // Always bind the UI/storage tenant to the authenticated cloud workspace
       // before revealing any page. This prevents stale Admin/customer data leakage.
-      if (cloudAccount?.cloudAdmin) setActiveAccount(cloudAdminAccount(cloudAccount));
-      else if (cloudAccount) setActiveAccount(cloudAccount);
+      if (cloudAccount?.cloudAdmin) {
+        setActiveAccount({ ...defaultAccount, owner: cloudAccount.email || "Tabaja Admin", email: cloudAccount.email || "", cloud: true, cloudAdmin: true });
+      } else if (cloudAccount) setActiveAccount(cloudAccount);
       localStorage.setItem(LOGIN_KEY, "1");
       sessionStorage.removeItem(LOGIN_KEY);
       showApp();
@@ -276,13 +251,13 @@ if (matchedAccount) {
   if (accessError) throw new Error(accessError);
 }
 
-const validDefault = !cloudMode() && user === LOGIN_USER && pass === LOGIN_PASSWORD;
+const validDefault = user === LOGIN_USER && pass === LOGIN_PASSWORD;
 const validCreated = Boolean(matchedAccount);
 
 if (!validDefault && !validCreated)
   throw new Error(
     cloudMode()
-      ? "Incorrect cloud email or password."
+      ? "Use your cloud email and password, or the local admin test account."
       : "Incorrect email, username or password."
   );
 
@@ -314,16 +289,7 @@ $("registerForm").addEventListener("submit", async e => {
   setAuthBusy("registerForm", true, "Creating company…");
   try {
     if (cloudMode()) {
-      const creatingFromAdmin = isTabajaAdmin() && isLoggedIn();
       const cloudAccount = await window.TabajaCloud.signUp(payload);
-      if (creatingFromAdmin) {
-        await window.TabajaCloud.signOut();
-        localStorage.removeItem(LOGIN_KEY); sessionStorage.removeItem(LOGIN_KEY);
-        localStorage.removeItem(ACTIVE_ACCOUNT_KEY); localStorage.removeItem(ACCOUNT_KEY);
-        showLogin();
-        $("loginError").textContent = `Company ${payload.company} created. Sign in as Admin to manage its access.`;
-        return;
-      }
       if (cloudAccount) setActiveAccount(cloudAccount);
     } else {
       const exists = readAccounts().some(a =>
@@ -346,7 +312,7 @@ writeAccount({
   status: "TRIAL",
   createdAt: new Date().toISOString(),
   trialExpiresAt: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toISOString(),
-  features: { nfc: false, batch: false, templates: false, printQuality: false, zebra: false }
+  features: { nfc: false, batch: false }
 });
     }
     localStorage.setItem(LOGIN_KEY, "1"); sessionStorage.removeItem(LOGIN_KEY);
@@ -1278,47 +1244,16 @@ sides.front = snapshot();
 sides.back = snapshot();
 updateCardInfo();
 status("V5.0 VECTOR TEST — stable engine kept, vector PDF added.");
-async function restoreStartupSession() {
-  if (cloudMode()) {
-    try {
-      const session = await window.TabajaCloud?.getSession?.();
-      if (!session?.user) {
-        localStorage.removeItem(LOGIN_KEY); sessionStorage.removeItem(LOGIN_KEY);
-        localStorage.removeItem(ACTIVE_ACCOUNT_KEY); localStorage.removeItem(ACCOUNT_KEY);
-        showLogin();
-        return;
-      }
-      let account;
-      if (session.user.id === window.TabajaCloud?.ADMIN_USER_ID) {
-        account = cloudAdminAccount({ cloudAdmin: true, userId: session.user.id, email: session.user.email });
-      } else {
-        const workspace = await window.TabajaCloud.loadWorkspace(session.user.id);
-        account = { ...(workspace || {}), owner: session.user.user_metadata?.full_name || session.user.email, email: session.user.email, cloud: true };
-      }
-      setActiveAccount(account);
-      localStorage.setItem(LOGIN_KEY, "1");
-      const accessError = accountAccessError(account);
-      if (accessError) throw new Error(accessError);
-      showApp();
-      return;
-    } catch (error) {
-      localStorage.removeItem(LOGIN_KEY); sessionStorage.removeItem(LOGIN_KEY);
-      localStorage.removeItem(ACTIVE_ACCOUNT_KEY); localStorage.removeItem(ACCOUNT_KEY);
-      showLogin();
-      $("loginError").textContent = error.message || "Please sign in again.";
-      return;
-    }
-  }
-  if (isLoggedIn()) {
-    const startupAccount = readAccount();
-    const startupAccessError = accountAccessError(startupAccount);
-    if (startupAccessError) {
-      localStorage.removeItem(LOGIN_KEY); sessionStorage.removeItem(LOGIN_KEY);
-      showLogin(); $("loginError").textContent = startupAccessError;
-    } else showApp();
-  } else showLogin();
-}
-restoreStartupSession();
+if (isLoggedIn()) {
+  const startupAccount = readAccount();
+  const startupAccessError = accountAccessError(startupAccount);
+  if (startupAccessError) {
+    localStorage.removeItem(LOGIN_KEY);
+    sessionStorage.removeItem(LOGIN_KEY);
+    showLogin();
+    $("loginError").textContent = startupAccessError;
+  } else showApp();
+} else showLogin();
 
 
 // ===== V6.1 BETA: Employee Card Builder — working canvas generator =====
@@ -2387,7 +2322,7 @@ window.TabajaElements = {
       status: String(c.status || 'TRIAL').toUpperCase(),
       trialStartedAt: c.trial_started_at || null,
       trialExpiresAt: c.trial_expires_at || c.licence_expires_at || null,
-      features: { nfc: c.feature_nfc === true, batch: c.feature_batch === true, templates: c.feature_templates === true, printQuality: c.feature_print_quality === true, zebra: c.feature_zebra === true },
+      features: { nfc: c.feature_nfc === true, batch: c.feature_batch === true, templates: c.feature_templates === true, quality: c.feature_quality === true, zebra: c.feature_zebra === true },
       cloud: true
     }));
   }
@@ -2407,7 +2342,7 @@ window.TabajaElements = {
     $("companyFeatureNfc").checked = a.features?.nfc === true;
     $("companyFeatureBatch").checked = a.features?.batch === true;
     $("companyFeatureTemplates").checked = a.features?.templates === true;
-    $("companyFeaturePrintQuality").checked = a.features?.printQuality === true;
+    $("companyFeatureQuality").checked = a.features?.quality === true;
     $("companyFeatureZebra").checked = a.features?.zebra === true;
     const left = daysLeft(a);
     const trialDetails = a.trialStartedAt || a.trialExpiresAt
@@ -2427,12 +2362,9 @@ window.TabajaElements = {
   // enabled separately after its Admin UPDATE RLS policy is confirmed.
   function updateAccount(mutator){
     if (cloudMode()) {
-      const id = select.value, i = cloudCompanies.findIndex(a => accountId(a) === id);
-      if (i < 0) return null;
-      const updated = {...cloudCompanies[i], features:{...(cloudCompanies[i].features||{})}};
-      mutator(updated);
-      cloudCompanies[i] = updated;
-      return updated;
+      msg.className = "company-manager-message error";
+      msg.textContent = "Cloud companies are connected read-only for this test. Admin editing will be enabled after the list is verified.";
+      return null;
     }
     const list = readAccounts(), id = select.value, i = list.findIndex(a => accountId(a) === id);
     if (i < 0) return null;
@@ -2452,15 +2384,6 @@ window.TabajaElements = {
       msg.textContent=error.message || "Unable to load companies.";
     }
   });
-  $("companyManagerCreate")?.addEventListener("click",()=>{
-    if(!isTabajaAdmin()) return;
-    modal.classList.add("hidden");
-    $("appShell")?.classList.add("hidden");
-    $("loginScreen")?.classList.remove("hidden");
-    showAuthView("register");
-    document.querySelector('.auth-tabs')?.classList.add('hidden');
-    $("registerError").textContent = "Admin company creation. After creation, sign back in as Admin to manage access.";
-  });
   $("closeCompanyManagerBtn")?.addEventListener("click",()=>modal.classList.add("hidden"));
   modal.addEventListener("click",e=>{ if(e.target===modal) modal.classList.add("hidden"); });
   select.addEventListener("change",renderSelected);
@@ -2478,21 +2401,5 @@ window.TabajaElements = {
   $("companyManagerPlus1")?.addEventListener("click",()=>extendTrial(1));
   $("companyManagerPlus2")?.addEventListener("click",()=>extendTrial(2));
   $("companyManagerActivate")?.addEventListener("click",()=>{ const a=updateAccount(a=>{a.status="ACTIVE";a.plan="Standard";a.trialExpiresAt=null;}); if(a){renderSelected();msg.className="company-manager-message ok";msg.textContent="Paid account activated. Data preserved.";} });
-  $("companyManagerSave")?.addEventListener("click", async ()=>{
-    const a=updateAccount(a=>{
-      a.status=$("companyManagerStatus").value;
-      a.features.nfc=$("companyFeatureNfc").checked; a.features.batch=$("companyFeatureBatch").checked;
-      a.features.templates=$("companyFeatureTemplates").checked; a.features.printQuality=$("companyFeaturePrintQuality").checked; a.features.zebra=$("companyFeatureZebra").checked;
-      if(a.status==="ACTIVE")a.trialExpiresAt=null;
-    });
-    if(!a) return;
-    if(cloudMode()){
-      try {
-        const supabase=window.TabajaCloud?.getClient?.();
-        const payload={status:String(a.status||'active').toLowerCase(),feature_nfc:a.features.nfc===true,feature_batch:a.features.batch===true,feature_templates:a.features.templates===true,feature_print_quality:a.features.printQuality===true,feature_zebra:a.features.zebra===true};
-        const {error}=await supabase.from('companies').update(payload).eq('id',a.id); if(error) throw error;
-      } catch(error){ msg.className='company-manager-message error'; msg.textContent=error.message||'Unable to save cloud access.'; return; }
-    }
-    renderSelected(); msg.className="company-manager-message ok"; msg.textContent="Company access saved.";
-  });
+  $("companyManagerSave")?.addEventListener("click",()=>{ const a=updateAccount(a=>{a.status=$("companyManagerStatus").value;a.features.nfc=$("companyFeatureNfc").checked;a.features.batch=$("companyFeatureBatch").checked;a.features.templates=$("companyFeatureTemplates").checked;a.features.quality=$("companyFeatureQuality").checked;a.features.zebra=$("companyFeatureZebra").checked;if(a.status==="ACTIVE")a.trialExpiresAt=null;}); if(a){renderSelected();msg.className="company-manager-message ok";msg.textContent="Company access saved.";} });
 })();

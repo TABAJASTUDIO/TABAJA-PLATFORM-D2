@@ -612,12 +612,3 @@ body.customer-account .ts-build-badge{display:none!important;}
 
 /* V12.9.3.13 Trial enforcement controls */
 .company-manager-extend{display:grid;grid-template-columns:1fr auto auto;gap:8px;align-items:center;padding:10px 12px;border:1px solid #e2e8f0;border-radius:12px;background:#f8fafc}.company-manager-extend span{font-size:13px;font-weight:800;color:#344054}.company-manager-extend button{padding:9px 12px}@media(max-width:520px){.company-manager-extend{grid-template-columns:1fr 1fr}.company-manager-extend span{grid-column:1/-1}}
-
-
-/* ===== V12.9.3.19 Paid feature access: fail closed ===== */
-[data-feature][hidden]{display:none!important;}
-body[data-templates-access="0"] [data-feature="templates"],
-body[data-print-quality-access="0"] [data-feature="printQuality"],
-body[data-zebra-access="0"] [data-feature="zebra"],
-body[data-nfc-access="0"] [data-feature="nfc"],
-body[data-batch-access="0"] [data-feature="batch"]{display:none!important;}
