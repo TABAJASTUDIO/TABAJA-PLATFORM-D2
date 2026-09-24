@@ -50,7 +50,7 @@
     if (!supabase) return null;
     const { data, error } = await supabase
       .from('company_members')
-      .select('role, companies(*)')
+      .select('role, companies(id,name,country,phone,plan,status,licence_expires_at,max_users)')
       .eq('user_id', userId)
       .limit(1)
       .maybeSingle();
@@ -66,14 +66,7 @@
       status: company.status || 'active',
       licenceExpiresAt: company.licence_expires_at || null,
       maxUsers: company.max_users || 1,
-      role: data.role || 'owner',
-      features: {
-        nfc: company.feature_nfc === true,
-        batch: company.feature_batch === true,
-        templates: company.feature_templates === true,
-        printQuality: company.feature_print_quality === true,
-        zebra: company.feature_zebra === true
-      }
+      role: data.role || 'owner'
     };
   }
 

@@ -10,10 +10,10 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="Tabaja Solution">
   <link rel="manifest" href="manifest.webmanifest">
-  <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png?v=12.9.3.255">
-  <link rel="shortcut icon" href="icons/tabaja-solution.ico?v=12.9.3.255">
+  <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png?v=12.7.0">
+  <link rel="shortcut icon" href="icons/tabaja-solution.ico?v=12.7.0">
   <link rel="apple-touch-icon" href="icons/icon-192.png">
-  <link rel="stylesheet" href="style.css?v=12.9.3.255">
+  <link rel="stylesheet" href="style.css?v=12.9.3.14">
   <script defer src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.0/fabric.min.js"></script>
   <script defer src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.6/dist/JsBarcode.all.min.js"></script>
@@ -42,14 +42,14 @@
         <div class="auth-logo"><span>TS</span></div>
         <div class="auth-tabs" role="tablist">
           <button id="showLoginTab" class="active" type="button">Sign In</button>
-          <button id="showRegisterTab" type="button" hidden style="display:none">Create Company</button>
+          <button id="showRegisterTab" type="button">Create Company</button>
         </div>
 
         <form id="loginForm" class="auth-form" autocomplete="on">
           <h2>Welcome back</h2>
           <p>Sign in to open your company workspace.</p>
           <label for="loginUser">Email or username</label>
-          <input id="loginUser" name="username" autocomplete="username" placeholder="Email" required>
+          <input id="loginUser" name="username" autocomplete="username" placeholder="admin or your email" required>
           <label for="loginPassword">Password</label>
           <div class="password-field"><input id="loginPassword" name="password" type="password" autocomplete="current-password" required><button id="toggleLoginPassword" type="button" aria-label="Show password">Show</button></div>
           <div class="auth-row"><label class="remember"><input id="rememberLogin" type="checkbox"> Keep me signed in</label><button id="forgotPasswordBtn" class="link-button" type="button">Forgot password?</button></div>
@@ -116,13 +116,13 @@
 
     <nav class="v8-nav" aria-label="Main navigation">
       <button class="v8-nav-btn active" data-view="dashboard">⌂<span>Command Center</span></button>
-      <button class="v8-nav-btn" data-view="templates" data-feature="templates">▦<span>Card Design Center</span></button>
+      <button class="v8-nav-btn" data-view="templates">▦<span>Card Design Center</span></button>
       <button class="v8-nav-btn" data-view="designer">✦<span>Identity Studio</span></button>
       <button class="v8-nav-btn" data-view="employees">👥<span>Employee Center</span></button>
       <button class="v8-nav-btn" data-view="printcenter">▦<span>Print Center</span></button>
       <button class="v8-nav-btn" data-view="reports">★<span>Reports</span></button>
       <button class="v8-nav-btn" data-view="nfc" data-feature="nfc">▣<span>NFC Studio</span></button>
-      <div class="ts-build-badge"><b>Tabaja Solution</b><span>Version 12.9.3.25</span></div>
+      <div class="ts-build-badge"><b>Tabaja Solution</b><span>Version 12.9.3.9</span></div>
     </nav>
 
     <section id="v8Dashboard" class="v8-dashboard command-center">
@@ -146,7 +146,7 @@
             <div class="cc-metric"><span>Today's Cards</span><b id="ccTodayCards">0</b><small>Printed today</small></div>
             <div class="cc-metric"><span>Employees</span><b id="ccEmployeeCount">0</b><small>Directory records</small></div>
             <div class="cc-metric"><span>Print Jobs</span><b id="ccTodayJobs">0</b><small>Jobs today</small></div>
-            <div class="cc-metric" data-feature="templates"><span>Templates</span><b id="ccTemplateCount">0</b><small>Saved designs</small></div>
+            <div class="cc-metric"><span>Templates</span><b id="ccTemplateCount">0</b><small>Saved designs</small></div>
           </div>
           <div class="cc-production-line"><span></span><i></i><i></i><i></i><i></i><small>Production activity will appear here as cards are printed.</small></div>
         </article>
@@ -201,7 +201,7 @@
     </section>
 
 
-    <section id="templateGalleryWorkspace" class="template-gallery-workspace" data-feature="templates" aria-labelledby="templateGalleryTitle">
+    <section id="templateGalleryWorkspace" class="template-gallery-workspace" aria-labelledby="templateGalleryTitle">
       <div class="tg-hero">
         <div>
           <span class="tg-kicker">V12.9.3.9 CUSTOMER READY</span>
@@ -219,7 +219,7 @@
 
       <section class="design-quick-start" aria-label="Quick design resources">
         <button type="button" data-quick-go="collections"><span>▦</span><div><b>Browse Collections</b><small>Government, corporate, schools and more</small></div><em>Open</em></button>
-        <button type="button" data-quick-go="templates" data-feature="templates"><span>✦</span><div><b>Ready Templates</b><small>Production-ready CR80 card designs</small></div><em>View</em></button>
+        <button type="button" data-quick-go="templates"><span>✦</span><div><b>Ready Templates</b><small>Production-ready CR80 card designs</small></div><em>View</em></button>
         <button type="button" data-quick-go="elements"><span>☺</span><div><b>Elements Library</b><small>Emoji, flags and useful card symbols</small></div><em>Explore</em></button>
       </section>
 
@@ -344,16 +344,16 @@
       <div class="module-head"><div><span class="v8-kicker">PRODUCTION CONTROL</span><h2>Print Center</h2><p>Choose the printing workflow you need. Zebra settings and stable print engines remain protected.</p></div><span class="module-status ready">PRINTER READY</span></div>
       <div class="module-grid three">
         <button class="module-card featured" data-go="batch" data-feature="batch"><span class="module-icon">▦</span><b>Batch Printing</b><small>Upload Excel and print up to 50 employee cards in one production run.</small><em>Open Batch Wizard →</em></button>
-        <button class="module-card" data-go="quality" data-feature="printQuality"><span class="module-icon">★</span><b>Print Quality</b><small>Professional photo enhancement and high-quality rendering controls.</small><em>Open Quality Controls →</em></button>
-        <button class="module-card" data-go="zebra" data-feature="zebra"><span class="module-icon">▣</span><b>Zebra Settings</b><small>ZC300 alignment, CR80 format and smart bleed calibration.</small><em>Open Zebra Settings →</em></button>
+        <button class="module-card" data-go="quality"><span class="module-icon">★</span><b>Print Quality</b><small>Professional photo enhancement and high-quality rendering controls.</small><em>Open Quality Controls →</em></button>
+        <button class="module-card" data-go="zebra"><span class="module-icon">▣</span><b>Zebra Settings</b><small>ZC300 alignment, CR80 format and smart bleed calibration.</small><em>Open Zebra Settings →</em></button>
       </div>
       <div class="module-info-row"><div><span>Printer</span><b>Zebra ZC300</b><small>Local / USB</small></div><div><span>Card Format</span><b>CR80</b><small>85.60 × 53.98 mm</small></div><div><span>Stable Engine</span><b>Protected</b><small>No print logic changed</small></div></div>
     </section>
 
     <section id="reportsWorkspace" class="module-workspace">
       <div class="module-head"><div><span class="v8-kicker">BUSINESS INTELLIGENCE</span><h2>Reports</h2><p>Production statistics and operational summaries in one dedicated module.</p></div><button type="button" class="module-export">Export Report</button></div>
-      <div class="report-metrics"><div><span>Cards Today</span><b id="reportCardsToday">0</b><small>Printed cards</small></div><div><span>Total Employees</span><b id="reportEmployees">0</b><small>Directory records</small></div><div><span>Print Jobs</span><b id="reportJobs">0</b><small>Recorded jobs</small></div><div data-feature="templates"><span>Templates</span><b id="reportTemplates">0</b><small>Saved designs</small></div></div>
-      <div class="module-grid two"><article class="report-panel"><span>PRODUCTION TREND</span><h3>Card output</h3><div class="report-placeholder"><i></i><i></i><i></i><i></i><i></i><i></i><small>Production activity will build automatically as print jobs are recorded.</small></div></article><article class="report-panel"><span>RECENT ACTIVITY</span><h3>Operational summary</h3><div class="report-list"><div><b>Workspace ready</b><small>Tabaja Solution V12.9.3.25</small></div><div><b>Stable print engine</b><small>Protected and unchanged</small></div><div><b>Reports module</b><small>Correct navigation restored</small></div></div></article></div>
+      <div class="report-metrics"><div><span>Cards Today</span><b id="reportCardsToday">0</b><small>Printed cards</small></div><div><span>Total Employees</span><b id="reportEmployees">0</b><small>Directory records</small></div><div><span>Print Jobs</span><b id="reportJobs">0</b><small>Recorded jobs</small></div><div><span>Templates</span><b id="reportTemplates">0</b><small>Saved designs</small></div></div>
+      <div class="module-grid two"><article class="report-panel"><span>PRODUCTION TREND</span><h3>Card output</h3><div class="report-placeholder"><i></i><i></i><i></i><i></i><i></i><i></i><small>Production activity will build automatically as print jobs are recorded.</small></div></article><article class="report-panel"><span>RECENT ACTIVITY</span><h3>Operational summary</h3><div class="report-list"><div><b>Workspace ready</b><small>Tabaja Solution V12.9.3.9</small></div><div><b>Stable print engine</b><small>Protected and unchanged</small></div><div><b>Reports module</b><small>Correct navigation restored</small></div></div></article></div>
     </section>
 
     <section id="nfcWorkspace" class="module-workspace" data-feature="nfc">
@@ -583,12 +583,12 @@
             <button id="replacePhotoBtn">Replace Photo</button>
           </div>
           <div class="builder-actions">
-            <button id="saveTemplateBtn" data-feature="templates">Save Template</button>
-            <button id="loadTemplateBtn" data-feature="templates">Load Template</button>
+            <button id="saveTemplateBtn">Save Template</button>
+            <button id="loadTemplateBtn">Load Template</button>
           </div>
           <p class="builder-note">You can move and resize the generated elements. Updating the content keeps every element in its current position.</p>
         </div>
-        <div id="v8QualityPanel" class="builder-panel v8-special-panel" data-v8-panel="quality" data-feature="printQuality">
+        <div id="v8QualityPanel" class="builder-panel v8-special-panel" data-v8-panel="quality">
           <h3>★ Professional Print Quality</h3>
           <p class="v8-panel-intro">Choose one quality mode. Professional is recommended for Zebra PVC cards.</p>
           <div class="v8-quality-modes">
@@ -600,7 +600,7 @@
           <div class="v8-quality-status"><b>Automatic:</b> high-quality text, photo enhancement and bleed-safe rendering.</div>
         </div>
 
-        <div id="v8ZebraPanel" class="builder-panel v8-special-panel" data-v8-panel="zebra" data-feature="zebra">
+        <div id="v8ZebraPanel" class="builder-panel v8-special-panel" data-v8-panel="zebra">
           <h3>▣ Zebra ZC300 Settings</h3>
           <p class="v8-panel-intro">Use the offsets only when a printed card shifts toward one edge.</p>
           <label>Horizontal offset X (mm)</label><input id="zebraOffsetX" type="number" value="0" min="-3" max="3" step="0.1">
@@ -692,7 +692,7 @@
           <label>Status<select id="companyManagerStatus"><option value="TRIAL">TRIAL</option><option value="ACTIVE">ACTIVE</option><option value="EXPIRED">EXPIRED</option><option value="SUSPENDED">SUSPENDED</option></select></label>
           <div class="company-manager-actions"><button id="companyManagerResetTrial" type="button">Start / Reset 5-Day Trial</button><button id="companyManagerActivate" type="button">Activate Paid Account</button></div>
           <div class="company-manager-extend"><span>Extend trial</span><button id="companyManagerPlus1" type="button">+1 Day</button><button id="companyManagerPlus2" type="button">+2 Days</button></div>
-          <fieldset><legend>Paid add-ons</legend><label class="company-feature-toggle"><input id="companyFeatureNfc" type="checkbox"> NFC Studio</label><label class="company-feature-toggle"><input id="companyFeatureBatch" type="checkbox"> Batch Printing</label><label class="company-feature-toggle"><input id="companyFeatureTemplates" type="checkbox"> Templates</label><label class="company-feature-toggle"><input id="companyFeaturePrintQuality" type="checkbox"> Print Quality</label><label class="company-feature-toggle"><input id="companyFeatureZebra" type="checkbox"> Zebra Settings</label></fieldset>
+          <fieldset><legend>Paid add-ons</legend><label class="company-feature-toggle"><input id="companyFeatureNfc" type="checkbox"> NFC Studio</label><label class="company-feature-toggle"><input id="companyFeatureBatch" type="checkbox"> Batch Printing</label></fieldset>
           <button id="companyManagerSave" class="primary" type="button">Save Company Access</button>
           <div id="companyManagerMessage" class="company-manager-message"></div>
         </div>
@@ -724,16 +724,16 @@
     <span>A new version is ready.</span>
     <button id="pwaUpdateBtn" type="button">Update now</button>
   </div>
-  <script defer src="cloud.js?v=12.9.3.255"></script>
-  <script defer src="app.js?v=12.9.3.255"></script>
-  <script defer src="commercial-templates.js?v=12.9.3.255"></script>
-  <script defer src="v8-ui.js?v=12.9.3.255"></script>
-  <script defer src="employee-manager.js?v=12.9.3.25"></script>
-  <script defer src="activity-store.js?v=12.9.3.25"></script>
-  <script defer src="command-center.js?v=12.9.3.25"></script>
+  <script defer src="cloud.js?v=12.9.3.16"></script>
+  <script defer src="app.js?v=12.9.3.16"></script>
+  <script defer src="commercial-templates.js?v=12.7.0"></script>
+  <script defer src="v8-ui.js?v=12.7.0"></script>
+  <script defer src="employee-manager.js?v=12.9.3.2"></script>
+  <script defer src="activity-store.js?v=12.9.3.2"></script>
+  <script defer src="command-center.js?v=12.9.3.4"></script>
   
   <div id="appToast" class="app-toast" role="status" aria-live="polite"></div>
-<script defer src="nfc-studio.js?v=12.9.3.25"></script>
-<script defer src="pwa.js?v=12.9.3.255"></script>
+<script defer src="nfc-studio.js?v=12.9.3-local-pwa"></script>
+<script defer src="pwa.js?v=12.9.3.16"></script>
 </body>
 </html>
