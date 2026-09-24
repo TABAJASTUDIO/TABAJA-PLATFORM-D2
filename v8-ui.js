@@ -37,7 +37,7 @@
 
   function setView(view) {
     if (view === 'nfc' && window.TabajaAccess && !window.TabajaAccess.can('nfc')) view = 'dashboard';
-    if (view === 'batch' && window.TabajaAccess && !window.TabajaAccess.can('batch')) view = 'printcenter';
+    if (['batch','templates','quality','zebra'].includes(view) && window.TabajaAccess && !window.TabajaAccess.can(view === 'templates' ? 'templates' : view)) view = 'printcenter';
     document.body.dataset.v8View = view;
     enforceSingleWorkspace(view);
     // Keep production/design controls out of customer-facing module pages.

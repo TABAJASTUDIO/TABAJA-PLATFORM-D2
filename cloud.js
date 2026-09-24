@@ -50,7 +50,7 @@
     if (!supabase) return null;
     const { data, error } = await supabase
       .from('company_members')
-      .select('role, companies(id,name,country,phone,plan,status,licence_expires_at,max_users,trial_started_at,trial_expires_at,feature_nfc,feature_batch)')
+      .select('role, companies(*)')
       .eq('user_id', userId)
       .limit(1)
       .maybeSingle();
@@ -60,17 +60,20 @@
     return {
       company: company.name,
       companyId: company.id,
-      id: company.id,
       country: company.country || '',
       phone: company.phone || '',
       plan: company.plan || 'Professional',
       status: company.status || 'active',
       licenceExpiresAt: company.licence_expires_at || null,
-      trialStartedAt: company.trial_started_at || null,
-      trialExpiresAt: company.trial_expires_at || company.licence_expires_at || null,
-      features: { nfc: company.feature_nfc === true, batch: company.feature_batch === true, templates: company.feature_templates === true, quality: company.feature_quality === true, zebra: company.feature_zebra === true },
       maxUsers: company.max_users || 1,
-      role: data.role || 'owner'
+      role: data.role || 'owner',
+      features: {
+        nfc: company.feature_nfc === true,
+        batch: company.feature_batch === true,
+        templates: company.feature_templates === true,
+        quality: company.feature_quality === true,
+        zebra: company.feature_zebra === true
+      }
     };
   }
 
@@ -133,7 +136,6 @@
     const account = {
       company: company.name,
       companyId: company.id,
-      id: company.id,
       owner: payload.owner,
       email: payload.email,
       country: payload.country,
