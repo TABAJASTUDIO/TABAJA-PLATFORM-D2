@@ -24,7 +24,10 @@ let currentSide = "front";
 let pendingImageRole = "image";
 let cropMode = false;
 
-const defaultAccount = { company: "Tabaja Solution", owner: "Tabaja Admin", email: "admin", country: "Sierra Leone", phone: "", plan: "Professional", features: { nfc: true, batch: true } };
+const defaultAccount = { company: "Tabaja Solution", owner: "Tabaja Admin", email: "admin", country: "Sierra Leone", phone: "", plan: "Professional", features: { nfc: true, batch: true, templates: true, printQuality: true, zebra: true } };
+function cloudAdminAccount(user = {}) {
+  return { id: user.id || window.TabajaCloud?.ADMIN_USER_ID || "cloud_owner", company: "Tabaja Solution", owner: user.user_metadata?.full_name || user.email || "Cloud Owner", email: user.email || "", country: "Sierra Leone", phone: "", plan: "Professional", cloud: true, cloudAdmin: true, features: { nfc: true, batch: true, templates: true, printQuality: true, zebra: true } };
+}
 function accountId(account) {
   return String(account?.id || account?.email || account?.company || "default")
     .trim().toLowerCase().replace(/[^a-z0-9]+/g, "_") || "default";
@@ -91,39 +94,31 @@ function tenantKey(base) {
 }
 
 function accountFeatures(account = readAccount()) {
-  const isAdmin = accountId(account) === "admin";
+  const isAdmin = isTabajaAdmin(account);
   return {
     nfc: isAdmin || account?.features?.nfc === true,
-    batch: isAdmin || account?.features?.batch === true
+    batch: isAdmin || account?.features?.batch === true,
+    templates: isAdmin || account?.features?.templates === true,
+    printQuality: isAdmin || account?.features?.printQuality === true,
+    zebra: isAdmin || account?.features?.zebra === true
   };
 }
 function applyFeatureAccess(account = readAccount()) {
   const features = accountFeatures(account);
-  const isAdmin = accountId(account) === "admin";
-
   document.body.dataset.nfcAccess = features.nfc ? "1" : "0";
   document.body.dataset.batchAccess = features.batch ? "1" : "0";
-
-  document.querySelectorAll('[data-feature="nfc"]').forEach(el => {
-    el.hidden = !features.nfc;
-    el.style.display = features.nfc ? "" : "none";
-  });
-
-  document.querySelectorAll('[data-feature="batch"]').forEach(el => {
-    el.hidden = !features.batch;
-    el.style.display = features.batch ? "" : "none";
-  });
-
-  document.querySelectorAll('[data-admin-only="true"]').forEach(el => {
-    el.hidden = !isAdmin;
-    el.style.display = isAdmin ? "" : "none";
-  });
-
+  document.body.dataset.templatesAccess = features.templates ? "1" : "0";
+  document.body.dataset.printQualityAccess = features.printQuality ? "1" : "0";
+  document.body.dataset.zebraAccess = features.zebra ? "1" : "0";
+  document.querySelectorAll('[data-feature="nfc"]').forEach(el => { el.hidden = !features.nfc; el.style.display = features.nfc ? "" : "none"; });
+  document.querySelectorAll('[data-feature="batch"]').forEach(el => { el.hidden = !features.batch; el.style.display = features.batch ? "" : "none"; });
+  document.querySelectorAll('[data-feature="templates"]').forEach(el => { el.hidden = !features.templates; el.style.display = features.templates ? "" : "none"; });
+  document.querySelectorAll('[data-feature="printQuality"]').forEach(el => { el.hidden = !features.printQuality; el.style.display = features.printQuality ? "" : "none"; });
+  document.querySelectorAll('[data-feature="zebra"]').forEach(el => { el.hidden = !features.zebra; el.style.display = features.zebra ? "" : "none"; });
   window.TabajaAccess = { can: feature => Boolean(accountFeatures()[feature]) };
 }
 
-
-function isTabajaAdmin(account = readAccount()) { return accountId(account) === "admin"; }
+function isTabajaAdmin(account = readAccount()) { return account?.cloudAdmin === true || account?.id === window.TabajaCloud?.ADMIN_USER_ID || accountId(account) === "admin"; }
 
 function effectiveAccountStatus(account = readAccount()) {
   if (isTabajaAdmin(account)) return "ACTIVE";
@@ -235,22 +230,10 @@ $("loginForm").addEventListener("submit", async e => {
   try {
     if (cloudMode() && user.includes("@")) {
       const cloudAccount = await window.TabajaCloud.signIn(user, pass);
-      if (cloudAccount?.cloudAdmin) {
-  setActiveAccount(defaultAccount);
-} else {
-  setActiveAccount({
-    ...cloudAccount,
-    features: {
-      nfc: cloudAccount.feature_nfc === true,
-      batch: cloudAccount.feature_batch === true
-    }
-  });
-}
-      localStorage.removeItem(LOGIN_KEY);
-sessionStorage.removeItem(LOGIN_KEY);
-
-($("rememberLogin").checked ? localStorage : sessionStorage)
-  .setItem(LOGIN_KEY, "1");
+      if (cloudAccount?.cloudAdmin) setActiveAccount(cloudAdminAccount({ id: cloudAccount.userId, email: cloudAccount.email }));
+      else setActiveAccount(cloudAccount);
+      localStorage.setItem(LOGIN_KEY, "1");
+      sessionStorage.removeItem(LOGIN_KEY);
       showApp();
       return;
     }
@@ -328,7 +311,7 @@ writeAccount({
   status: "TRIAL",
   createdAt: new Date().toISOString(),
   trialExpiresAt: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toISOString(),
-  features: { nfc: false, batch: false }
+  features: { nfc: false, batch: false, templates: false, printQuality: false, zebra: false }
 });
     }
     localStorage.setItem(LOGIN_KEY, "1"); sessionStorage.removeItem(LOGIN_KEY);
@@ -1268,6 +1251,24 @@ if (isLoggedIn()) {
   } else showApp();
 } else showLogin();
 
+// Reconcile persisted Supabase session with the visible account identity.
+(async function restoreCloudIdentity(){
+  if (!cloudMode()) return;
+  try {
+    const session = await window.TabajaCloud.getSession();
+    if (!session?.user) return;
+    if (session.user.id === window.TabajaCloud.ADMIN_USER_ID) {
+      setActiveAccount(cloudAdminAccount(session.user));
+    } else {
+      const workspace = await window.TabajaCloud.loadWorkspace(session.user.id);
+      if (!workspace) return;
+      setActiveAccount({ ...workspace, owner: session.user.user_metadata?.full_name || session.user.email, email: session.user.email, cloud: true });
+    }
+    localStorage.setItem(LOGIN_KEY, "1");
+    sessionStorage.removeItem(LOGIN_KEY);
+    showApp();
+  } catch (error) { console.warn("Cloud session restore skipped:", error); }
+})();
 
 // ===== V6.1 BETA: Employee Card Builder — working canvas generator =====
 const V61_TEMPLATE_KEY = "tabaja_card_designer_v61_template";
@@ -2335,7 +2336,7 @@ window.TabajaElements = {
       status: String(c.status || 'TRIAL').toUpperCase(),
       trialStartedAt: c.trial_started_at || null,
       trialExpiresAt: c.trial_expires_at || c.licence_expires_at || null,
-      features: { nfc: c.feature_nfc === true, batch: c.feature_batch === true },
+      features: { nfc: c.feature_nfc === true, batch: c.feature_batch === true, templates: c.feature_templates === true, printQuality: c.feature_print_quality === true, zebra: c.feature_zebra === true },
       cloud: true
     }));
   }
@@ -2354,6 +2355,9 @@ window.TabajaElements = {
     $("companyManagerStatus").value = status;
     $("companyFeatureNfc").checked = a.features?.nfc === true;
     $("companyFeatureBatch").checked = a.features?.batch === true;
+    $("companyFeatureTemplates").checked = a.features?.templates === true;
+    $("companyFeaturePrintQuality").checked = a.features?.printQuality === true;
+    $("companyFeatureZebra").checked = a.features?.zebra === true;
     const left = daysLeft(a);
     const trialDetails = a.trialStartedAt || a.trialExpiresAt
       ? `<div class="company-trial-details"><div><span>Trial started</span><b>${fmtDate(a.trialStartedAt)}</b></div><div><span>Trial expires</span><b>${fmtDate(a.trialExpiresAt)}</b></div><div><span>Days remaining</span><b>${left === null ? "—" : left}</b></div></div>`
@@ -2370,61 +2374,33 @@ window.TabajaElements = {
 
   // Keep the proven local-preview editing path unchanged. Cloud editing will be
   // enabled separately after its Admin UPDATE RLS policy is confirmed.
-  async function updateAccount(mutator){
-  if (cloudMode()) {
-    const id = select.value;
-    const i = cloudCompanies.findIndex(a => accountId(a) === id);
-    if (i < 0) return null;
-
-    const updated = {
-      ...cloudCompanies[i],
-      features: { ...(cloudCompanies[i].features || {}) }
-    };
-
-    mutator(updated);
-
+  async function updateCloudAccount(mutator){
+    const a = byId(select.value);
+    if (!a) return null;
+    const updated = {...a, features:{...(a.features||{})}}; mutator(updated);
     const supabase = window.TabajaCloud?.getClient?.();
-    if (!supabase) throw new Error("Cloud is not configured.");
-
-    const { error } = await supabase
-      .from("companies")
-      .update({
-        plan: updated.plan,
-        status: String(updated.status || "").toUpperCase() === "SUSPENDED"
-  ? "suspended"
-  : String(updated.status || "").toUpperCase() === "EXPIRED"
-    ? "expired"
-    : "active",
-        trial_started_at: updated.trialStartedAt || null,
-        trial_expires_at: updated.trialExpiresAt || null,
-        licence_expires_at: updated.trialExpiresAt || null,
-        feature_nfc: updated.features?.nfc === true,
-        feature_batch: updated.features?.batch === true
-      })
-      .eq("id", updated.id);
-
+    const payload = {
+      status: String(updated.status || "ACTIVE").toLowerCase(),
+      plan: updated.plan || "Standard",
+      licence_expires_at: updated.trialExpiresAt || null,
+      feature_nfc: updated.features.nfc === true,
+      feature_batch: updated.features.batch === true,
+      feature_templates: updated.features.templates === true,
+      feature_print_quality: updated.features.printQuality === true,
+      feature_zebra: updated.features.zebra === true
+    };
+    const { error } = await supabase.from('companies').update(payload).eq('id', updated.id);
     if (error) throw error;
-
-    cloudCompanies[i] = updated;
-    return updated;
+    Object.assign(a, updated);
+    return a;
   }
 
-  const list = readAccounts();
-  const id = select.value;
-  const i = list.findIndex(a => accountId(a) === id);
-  if (i < 0) return null;
-
-  const updated = {
-    ...list[i],
-    features: { ...(list[i].features || {}) }
-  };
-
-  mutator(updated);
-  list[i] = updated;
-  saveAccounts(list);
-
-  return updated;
-}
+  function updateAccount(mutator){
+    if (cloudMode()) return null;
+    const list = readAccounts(), id = select.value, i = list.findIndex(a => accountId(a) === id);
+    if (i < 0) return null;
+    const updated = {...list[i], features:{...(list[i].features||{})}}; mutator(updated); list[i]=updated; saveAccounts(list); return updated;
+  }
 
   $("companyManagerBtn")?.addEventListener("click", async ()=>{
     if(!isTabajaAdmin()) return;
@@ -2442,102 +2418,25 @@ window.TabajaElements = {
   $("closeCompanyManagerBtn")?.addEventListener("click",()=>modal.classList.add("hidden"));
   modal.addEventListener("click",e=>{ if(e.target===modal) modal.classList.add("hidden"); });
   select.addEventListener("change",renderSelected);
-  $("companyManagerResetTrial")?.addEventListener("click", async ()=>{
-  try {
-    const a = await updateAccount(a=>{
-      a.status = "TRIAL";
-      a.plan = "Standard · 5-Day Trial";
-      a.trialStartedAt = new Date().toISOString();
-      a.trialExpiresAt = new Date(Date.now() + 5*86400000).toISOString();
+  $("companyManagerResetTrial")?.addEventListener("click",()=>{ const a=updateAccount(a=>{a.status="TRIAL";a.plan="Standard · 5-Day Trial";a.trialStartedAt=new Date().toISOString();a.trialExpiresAt=new Date(Date.now()+5*86400000).toISOString();}); if(a){renderSelected();msg.className="company-manager-message ok";msg.textContent="5-day trial started from now.";} });
+  function extendTrial(days){
+    const a=updateAccount(a=>{
+      const currentExpiry=a.trialExpiresAt ? new Date(a.trialExpiresAt).getTime() : NaN;
+      const base=Number.isFinite(currentExpiry) && currentExpiry>Date.now() ? currentExpiry : Date.now();
+      if(!a.trialStartedAt) a.trialStartedAt=new Date().toISOString();
+      a.status="TRIAL"; a.plan="Standard · 5-Day Trial";
+      a.trialExpiresAt=new Date(base + days*86400000).toISOString();
     });
-
-    if (a) {
-      renderSelected();
-      msg.className = "company-manager-message ok";
-      msg.textContent = "5-day trial started from now.";
-    }
-  } catch (error) {
-    msg.className = "company-manager-message error";
-    msg.textContent = error.message || "Unable to update company.";
+    if(a){renderSelected();msg.className="company-manager-message ok";msg.textContent=`Trial extended by ${days} day${days===1?"":"s"}.`;}
   }
-});
-
-async function extendTrial(days){
-  try {
-    const a = await updateAccount(a=>{
-      const currentExpiry = a.trialExpiresAt
-        ? new Date(a.trialExpiresAt).getTime()
-        : NaN;
-
-      const base =
-        Number.isFinite(currentExpiry) && currentExpiry > Date.now()
-          ? currentExpiry
-          : Date.now();
-
-      if (!a.trialStartedAt) {
-        a.trialStartedAt = new Date().toISOString();
-      }
-
-      a.status = "TRIAL";
-      a.plan = "Standard · 5-Day Trial";
-      a.trialExpiresAt =
-        new Date(base + days*86400000).toISOString();
-    });
-
-    if (a) {
-      renderSelected();
-      msg.className = "company-manager-message ok";
-      msg.textContent =
-        `Trial extended by ${days} day${days === 1 ? "" : "s"}.`;
-    }
-  } catch (error) {
-    msg.className = "company-manager-message error";
-    msg.textContent = error.message || "Unable to extend trial.";
-  }
-}
-
-$("companyManagerPlus1")?.addEventListener("click", ()=>extendTrial(1));
-$("companyManagerPlus2")?.addEventListener("click", ()=>extendTrial(2));
-
-$("companyManagerActivate")?.addEventListener("click", async ()=>{
-  try {
-    const a = await updateAccount(a=>{
-      a.status = "ACTIVE";
-      a.plan = "Standard";
-      a.trialExpiresAt = null;
-    });
-
-    if (a) {
-      renderSelected();
-      msg.className = "company-manager-message ok";
-      msg.textContent = "Paid account activated. Data preserved.";
-    }
-  } catch (error) {
-    msg.className = "company-manager-message error";
-    msg.textContent = error.message || "Unable to activate account.";
-  }
-});
-
-$("companyManagerSave")?.addEventListener("click", async ()=>{
-  try {
-    const a = await updateAccount(a=>{
-      a.status = $("companyManagerStatus").value;
-      a.features.nfc = $("companyFeatureNfc").checked;
-      a.features.batch = $("companyFeatureBatch").checked;
-
-      if (a.status === "ACTIVE") {
-        a.trialExpiresAt = null;
-      }
-    });
-
-    if (a) {
-      renderSelected();
-      msg.className = "company-manager-message ok";
-      msg.textContent = "Company access saved.";
-    }
-  } catch (error) {
-    msg.className = "company-manager-message error";
-    msg.textContent = error.message || "Unable to save company access.";
-  }
-});
+  $("companyManagerPlus1")?.addEventListener("click",()=>extendTrial(1));
+  $("companyManagerPlus2")?.addEventListener("click",()=>extendTrial(2));
+  $("companyManagerActivate")?.addEventListener("click",()=>{ const a=updateAccount(a=>{a.status="ACTIVE";a.plan="Standard";a.trialExpiresAt=null;}); if(a){renderSelected();msg.className="company-manager-message ok";msg.textContent="Paid account activated. Data preserved.";} });
+  $("companyManagerSave")?.addEventListener("click", async ()=>{
+    const mutate = a=>{a.status=$("companyManagerStatus").value;a.features.nfc=$("companyFeatureNfc").checked;a.features.batch=$("companyFeatureBatch").checked;a.features.templates=$("companyFeatureTemplates").checked;a.features.printQuality=$("companyFeaturePrintQuality").checked;a.features.zebra=$("companyFeatureZebra").checked;if(a.status==="ACTIVE")a.trialExpiresAt=null;};
+    try {
+      const a = cloudMode() ? await updateCloudAccount(mutate) : updateAccount(mutate);
+      if(a){renderSelected();msg.className="company-manager-message ok";msg.textContent="Company access saved.";}
+    } catch(error) { msg.className="company-manager-message error"; msg.textContent=error.message || "Unable to save company access."; }
+  });
 })();
