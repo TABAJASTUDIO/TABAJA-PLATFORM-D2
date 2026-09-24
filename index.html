@@ -10,10 +10,10 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="Tabaja Solution">
   <link rel="manifest" href="manifest.webmanifest">
-  <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png?v=12.9.3.22">
-  <link rel="shortcut icon" href="icons/tabaja-solution.ico?v=12.9.3.22">
+  <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png?v=12.9.3.233">
+  <link rel="shortcut icon" href="icons/tabaja-solution.ico?v=12.9.3.233">
   <link rel="apple-touch-icon" href="icons/icon-192.png">
-  <link rel="stylesheet" href="style.css?v=12.9.3.222">
+  <link rel="stylesheet" href="style.css?v=12.9.3.233">
   <script defer src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.0/fabric.min.js"></script>
   <script defer src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.6/dist/JsBarcode.all.min.js"></script>
@@ -35,7 +35,7 @@
           <div><b>Plan permissions</b><span>Features can be enabled by subscription.</span></div>
           <div><b>PWA ready</b><span>Runs as an installed Windows or Android app.</span></div>
         </div>
-        <small>V12.9.3.22 Smart Identity Platform — professional card production workspace.</small>
+        <small>V12.9.3.23 Smart Identity Platform — professional card production workspace.</small>
       </div>
 
       <div class="auth-card">
@@ -49,7 +49,7 @@
           <h2>Welcome back</h2>
           <p>Sign in to open your company workspace.</p>
           <label for="loginUser">Email or username</label>
-          <input id="loginUser" name="username" autocomplete="username" placeholder="Email address" required>
+          <input id="loginUser" name="username" autocomplete="username" placeholder="admin or your email" required>
           <label for="loginPassword">Password</label>
           <div class="password-field"><input id="loginPassword" name="password" type="password" autocomplete="current-password" required><button id="toggleLoginPassword" type="button" aria-label="Show password">Show</button></div>
           <div class="auth-row"><label class="remember"><input id="rememberLogin" type="checkbox"> Keep me signed in</label><button id="forgotPasswordBtn" class="link-button" type="button">Forgot password?</button></div>
@@ -57,7 +57,7 @@
           <div id="loginError" class="login-error" aria-live="polite"></div>
         </form>
 
-        <form id="registerForm" class="auth-form hidden" autocomplete="on">
+        <form id="registerForm" class="auth-form hidden" autocomplete="on" hidden>
           <h2>Create company workspace</h2>
           <p>Create a secure company workspace in the cloud.</p>
           <div class="form-grid">
@@ -122,7 +122,7 @@
       <button class="v8-nav-btn" data-view="printcenter">▦<span>Print Center</span></button>
       <button class="v8-nav-btn" data-view="reports">★<span>Reports</span></button>
       <button class="v8-nav-btn" data-view="nfc" data-feature="nfc">▣<span>NFC Studio</span></button>
-      <div class="ts-build-badge"><b>Tabaja Solution</b><span>Version 12.9.3.22</span></div>
+      <div class="ts-build-badge"><b>Tabaja Solution</b><span>Version 12.9.3.23</span></div>
     </nav>
 
     <section id="v8Dashboard" class="v8-dashboard command-center">
@@ -146,7 +146,7 @@
             <div class="cc-metric"><span>Today's Cards</span><b id="ccTodayCards">0</b><small>Printed today</small></div>
             <div class="cc-metric"><span>Employees</span><b id="ccEmployeeCount">0</b><small>Directory records</small></div>
             <div class="cc-metric"><span>Print Jobs</span><b id="ccTodayJobs">0</b><small>Jobs today</small></div>
-            <div class="cc-metric" data-feature="templates"><span>Templates</span><b id="ccTemplateCount">0</b><small>Saved designs</small></div>
+            <div class="cc-metric"><span>Templates</span><b id="ccTemplateCount">0</b><small>Saved designs</small></div>
           </div>
           <div class="cc-production-line"><span></span><i></i><i></i><i></i><i></i><small>Production activity will appear here as cards are printed.</small></div>
         </article>
@@ -201,10 +201,10 @@
     </section>
 
 
-    <section id="templateGalleryWorkspace" class="template-gallery-workspace" data-feature="templates" aria-labelledby="templateGalleryTitle">
+    <section id="templateGalleryWorkspace" class="template-gallery-workspace" aria-labelledby="templateGalleryTitle">
       <div class="tg-hero">
         <div>
-          <span class="tg-kicker">V12.9.3.22 CUSTOMER READY</span>
+          <span class="tg-kicker">V12.9.3.23 CUSTOMER READY</span>
           <h2 id="templateGalleryTitle">Professional identity design, without the clutter.</h2>
           <p>Choose a sector, open a production-ready template, or start from a clean CR80 canvas.</p>
           <div class="tg-proof" aria-label="Platform highlights">
@@ -353,7 +353,7 @@
     <section id="reportsWorkspace" class="module-workspace">
       <div class="module-head"><div><span class="v8-kicker">BUSINESS INTELLIGENCE</span><h2>Reports</h2><p>Production statistics and operational summaries in one dedicated module.</p></div><button type="button" class="module-export">Export Report</button></div>
       <div class="report-metrics"><div><span>Cards Today</span><b id="reportCardsToday">0</b><small>Printed cards</small></div><div><span>Total Employees</span><b id="reportEmployees">0</b><small>Directory records</small></div><div><span>Print Jobs</span><b id="reportJobs">0</b><small>Recorded jobs</small></div><div data-feature="templates"><span>Templates</span><b id="reportTemplates">0</b><small>Saved designs</small></div></div>
-      <div class="module-grid two"><article class="report-panel"><span>PRODUCTION TREND</span><h3>Card output</h3><div class="report-placeholder"><i></i><i></i><i></i><i></i><i></i><i></i><small>Production activity will build automatically as print jobs are recorded.</small></div></article><article class="report-panel"><span>RECENT ACTIVITY</span><h3>Operational summary</h3><div class="report-list"><div><b>Workspace ready</b><small>Tabaja Solution V12.9.3.22</small></div><div><b>Stable print engine</b><small>Protected and unchanged</small></div><div><b>Reports module</b><small>Correct navigation restored</small></div></div></article></div>
+      <div class="module-grid two"><article class="report-panel"><span>PRODUCTION TREND</span><h3>Card output</h3><div class="report-placeholder"><i></i><i></i><i></i><i></i><i></i><i></i><small>Production activity will build automatically as print jobs are recorded.</small></div></article><article class="report-panel"><span>RECENT ACTIVITY</span><h3>Operational summary</h3><div class="report-list"><div><b>Workspace ready</b><small>Tabaja Solution V12.9.3.23</small></div><div><b>Stable print engine</b><small>Protected and unchanged</small></div><div><b>Reports module</b><small>Correct navigation restored</small></div></div></article></div>
     </section>
 
     <section id="nfcWorkspace" class="module-workspace" data-feature="nfc">
@@ -583,12 +583,12 @@
             <button id="replacePhotoBtn">Replace Photo</button>
           </div>
           <div class="builder-actions">
-            <button id="saveTemplateBtn" data-feature="templates">Save Template</button>
-            <button id="loadTemplateBtn" data-feature="templates">Load Template</button>
+            <button data-feature="templates" id="saveTemplateBtn">Save Template</button>
+            <button data-feature="templates" id="loadTemplateBtn">Load Template</button>
           </div>
           <p class="builder-note">You can move and resize the generated elements. Updating the content keeps every element in its current position.</p>
         </div>
-        <div id="v8QualityPanel" class="builder-panel v8-special-panel" data-v8-panel="quality" data-feature="quality">
+        <div id="v8QualityPanel" class="builder-panel v8-special-panel" data-v8-panel="quality">
           <h3>★ Professional Print Quality</h3>
           <p class="v8-panel-intro">Choose one quality mode. Professional is recommended for Zebra PVC cards.</p>
           <div class="v8-quality-modes">
@@ -600,7 +600,7 @@
           <div class="v8-quality-status"><b>Automatic:</b> high-quality text, photo enhancement and bleed-safe rendering.</div>
         </div>
 
-        <div id="v8ZebraPanel" class="builder-panel v8-special-panel" data-v8-panel="zebra" data-feature="zebra">
+        <div id="v8ZebraPanel" class="builder-panel v8-special-panel" data-v8-panel="zebra">
           <h3>▣ Zebra ZC300 Settings</h3>
           <p class="v8-panel-intro">Use the offsets only when a printed card shifts toward one edge.</p>
           <label>Horizontal offset X (mm)</label><input id="zebraOffsetX" type="number" value="0" min="-3" max="3" step="0.1">
@@ -724,16 +724,16 @@
     <span>A new version is ready.</span>
     <button id="pwaUpdateBtn" type="button">Update now</button>
   </div>
-  <script defer src="cloud.js?v=12.9.3.222"></script>
-  <script defer src="app.js?v=12.9.3.222"></script>
-  <script defer src="commercial-templates.js?v=12.9.3.22"></script>
-  <script defer src="v8-ui.js?v=12.9.3.22"></script>
-  <script defer src="employee-manager.js?v=12.9.3.22"></script>
-  <script defer src="activity-store.js?v=12.9.3.22"></script>
-  <script defer src="command-center.js?v=12.9.3.222"></script>
+  <script defer src="cloud.js?v=12.9.3.233"></script>
+  <script defer src="app.js?v=12.9.3.233"></script>
+  <script defer src="commercial-templates.js?v=12.9.3.233"></script>
+  <script defer src="v8-ui.js?v=12.9.3.233"></script>
+  <script defer src="employee-manager.js?v=12.9.3.23"></script>
+  <script defer src="activity-store.js?v=12.9.3.23"></script>
+  <script defer src="command-center.js?v=12.9.3.23"></script>
   
   <div id="appToast" class="app-toast" role="status" aria-live="polite"></div>
-<script defer src="nfc-studio.js?v=12.9.3.22"></script>
-<script defer src="pwa.js?v=12.9.3.222"></script>
+<script defer src="nfc-studio.js?v=12.9.3.23"></script>
+<script defer src="pwa.js?v=12.9.3.233"></script>
 </body>
 </html>

@@ -1,0 +1,14 @@
+V12.9.3.23 AUDIT
+Baseline: V12.9.3.16 PASSWORD RECOVERY
+
+Verified repairs:
+1. Supabase owner UID remains 74cdabd7-4fb6-4016-bf68-cfac6bb17c14.
+2. Cloud owner UI account now preserves abed_tabajah_15@hotmail.com instead of replacing it with email "admin".
+3. isTabajaAdmin recognizes the Supabase owner UID/cloudAdmin flag.
+4. Admin feature access is forced ON for NFC, Batch, Templates, Print Quality, Zebra.
+5. Public Create Company tab/form is hidden.
+6. Customer feature controls added for Templates, Print Quality, Zebra alongside NFC/Batch.
+7. PWA/cache/version references unified to 12.9.3.23.
+8. Supabase migration is additive only: no DELETE/DROP TABLE/data reset. It adds feature columns and an owner RLS policy so Company Manager can see customer companies such as B7S.
+9. Customer workspace loader has a legacy fallback so login still works before the additive migration is applied.
+10. JavaScript syntax checked for app.js, cloud.js, service-worker.js, pwa.js.

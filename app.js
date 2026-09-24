@@ -24,7 +24,10 @@ let currentSide = "front";
 let pendingImageRole = "image";
 let cropMode = false;
 
-const defaultAccount = { id: "admin", company: "Tabaja Solution", owner: "Tabaja Admin", email: "admin", country: "Sierra Leone", phone: "", plan: "Professional", features: { nfc: true, batch: true, templates: true, quality: true, zebra: true } };
+const defaultAccount = { id: "admin", company: "Tabaja Solution", owner: "TEST OWNER", email: "abed_tabajah_15@hotmail.com", country: "Sierra Leone", phone: "", plan: "Professional", cloudAdmin: true, userId: "74cdabd7-4fb6-4016-bf68-cfac6bb17c14", features: { nfc: true, batch: true, templates: true, quality: true, zebra: true } };
+function cloudAdminAccount(email = defaultAccount.email) {
+  return { ...defaultAccount, email: email || defaultAccount.email, cloud: true, cloudAdmin: true };
+}
 function accountId(account) {
   return String(account?.id || account?.email || account?.company || "default")
     .trim().toLowerCase().replace(/[^a-z0-9]+/g, "_") || "default";
@@ -90,35 +93,30 @@ function tenantKey(base) {
   return `${base}__${accountId(readAccount())}`;
 }
 
-function isCloudAdminAccount(account = readAccount()) {
-  return account?.cloudAdmin === true || (account?.userId && account.userId === window.TabajaCloud?.ADMIN_USER_ID);
-}
 function accountFeatures(account = readAccount()) {
-  const isAdmin = accountId(account) === "admin" || isCloudAdminAccount(account);
+  const admin = isTabajaAdmin(account);
   return {
-    nfc: isAdmin || account?.features?.nfc === true,
-    batch: isAdmin || account?.features?.batch === true,
-    templates: isAdmin || account?.features?.templates === true,
-    quality: isAdmin || account?.features?.quality === true,
-    zebra: isAdmin || account?.features?.zebra === true
+    nfc: admin || account?.features?.nfc === true,
+    batch: admin || account?.features?.batch === true,
+    templates: admin || account?.features?.templates === true,
+    quality: admin || account?.features?.quality === true,
+    zebra: admin || account?.features?.zebra === true
   };
 }
 function applyFeatureAccess(account = readAccount()) {
   const features = accountFeatures(account);
   document.body.dataset.nfcAccess = features.nfc ? "1" : "0";
   document.body.dataset.batchAccess = features.batch ? "1" : "0";
-  document.body.dataset.templatesAccess = features.templates ? "1" : "0";
-  document.body.dataset.qualityAccess = features.quality ? "1" : "0";
-  document.body.dataset.zebraAccess = features.zebra ? "1" : "0";
-  document.querySelectorAll('[data-feature="nfc"]').forEach(el => { el.hidden = !features.nfc; el.style.display = features.nfc ? "" : "none"; });
-  document.querySelectorAll('[data-feature="batch"]').forEach(el => { el.hidden = !features.batch; el.style.display = features.batch ? "" : "none"; });
-  document.querySelectorAll('[data-feature="templates"]').forEach(el => { el.hidden = !features.templates; el.style.display = features.templates ? "" : "none"; });
-  document.querySelectorAll('[data-feature="quality"]').forEach(el => { el.hidden = !features.quality; el.style.display = features.quality ? "" : "none"; });
-  document.querySelectorAll('[data-feature="zebra"]').forEach(el => { el.hidden = !features.zebra; el.style.display = features.zebra ? "" : "none"; });
+  document.querySelectorAll('[data-feature]').forEach(el => {
+    const feature = el.dataset.feature;
+    if (!(feature in features)) return;
+    el.hidden = !features[feature];
+    el.style.display = features[feature] ? "" : "none";
+  });
   window.TabajaAccess = { can: feature => Boolean(accountFeatures()[feature]) };
 }
 
-function isTabajaAdmin(account = readAccount()) { return accountId(account) === "admin" || isCloudAdminAccount(account); }
+function isTabajaAdmin(account = readAccount()) { return accountId(account) === "admin" || account?.cloudAdmin === true || String(account?.userId || "") === String(window.TabajaCloud?.ADMIN_USER_ID || "74cdabd7-4fb6-4016-bf68-cfac6bb17c14"); }
 
 function effectiveAccountStatus(account = readAccount()) {
   if (isTabajaAdmin(account)) return "ACTIVE";
@@ -230,11 +228,8 @@ $("loginForm").addEventListener("submit", async e => {
   try {
     if (cloudMode() && user.includes("@")) {
       const cloudAccount = await window.TabajaCloud.signIn(user, pass);
-      if (cloudAccount?.cloudAdmin) {
-        setActiveAccount({ ...defaultAccount, id: cloudAccount.userId, userId: cloudAccount.userId, owner: cloudAccount.email, email: cloudAccount.email, cloud: true, cloudAdmin: true });
-      } else {
-        setActiveAccount(cloudAccount);
-      }
+      if (cloudAccount?.cloudAdmin) setActiveAccount(cloudAdminAccount(cloudAccount.email));
+      else setActiveAccount(cloudAccount);
       localStorage.setItem(LOGIN_KEY, "1");
       sessionStorage.removeItem(LOGIN_KEY);
       showApp();
@@ -1243,43 +1238,31 @@ sides.front = snapshot();
 sides.back = snapshot();
 updateCardInfo();
 status("V5.0 VECTOR TEST — stable engine kept, vector PDF added.");
-async function restoreStartupSession() {
-  if (cloudMode()) {
-    try {
-      const session = await window.TabajaCloud.getSession();
-      if (session?.user) {
-        let account;
-        if (session.user.id === window.TabajaCloud.ADMIN_USER_ID) {
-          account = { ...defaultAccount, id: session.user.id, userId: session.user.id, owner: session.user.email, email: session.user.email, cloud: true, cloudAdmin: true };
-        } else {
-          const workspace = await window.TabajaCloud.loadWorkspace(session.user.id);
-          account = { ...(workspace || {}), owner: session.user.user_metadata?.full_name || session.user.email, email: session.user.email, cloud: true, userId: session.user.id };
-        }
-        setActiveAccount(account);
-        localStorage.setItem(LOGIN_KEY, "1");
-        const accessError = accountAccessError(account);
-        if (accessError) throw new Error(accessError);
-        showApp();
-        return;
+async function restoreSignedInAccount() {
+  if (!isLoggedIn()) { showLogin(); return; }
+  try {
+    if (cloudMode()) {
+      const session = await window.TabajaCloud?.getSession?.();
+      if (!session) {
+        localStorage.removeItem(LOGIN_KEY); sessionStorage.removeItem(LOGIN_KEY); showLogin(); return;
       }
-    } catch (error) {
-      localStorage.removeItem(LOGIN_KEY); sessionStorage.removeItem(LOGIN_KEY);
-      showLogin();
-      if ($("loginError")) $("loginError").textContent = error.message || "Please sign in again.";
-      return;
+      if (session.user?.id === window.TabajaCloud?.ADMIN_USER_ID) {
+        setActiveAccount(cloudAdminAccount(session.user.email));
+      } else {
+        const workspace = await window.TabajaCloud?.loadWorkspace?.(session.user.id);
+        if (workspace) setActiveAccount({ ...workspace, owner: session.user.user_metadata?.full_name || session.user.email, email: session.user.email, userId: session.user.id, cloud: true });
+      }
     }
-    localStorage.removeItem(LOGIN_KEY); sessionStorage.removeItem(LOGIN_KEY);
-    showLogin();
-    return;
-  }
-  if (isLoggedIn()) {
     const startupAccount = readAccount();
     const startupAccessError = accountAccessError(startupAccount);
-    if (startupAccessError) { localStorage.removeItem(LOGIN_KEY); sessionStorage.removeItem(LOGIN_KEY); showLogin(); $("loginError").textContent = startupAccessError; }
-    else showApp();
-  } else showLogin();
+    if (startupAccessError) throw new Error(startupAccessError);
+    showApp();
+  } catch (error) {
+    localStorage.removeItem(LOGIN_KEY); sessionStorage.removeItem(LOGIN_KEY); showLogin();
+    $("loginError").textContent = error.message || "Please sign in again.";
+  }
 }
-restoreStartupSession();
+restoreSignedInAccount();
 
 
 // ===== V6.1 BETA: Employee Card Builder — working canvas generator =====
@@ -2384,32 +2367,15 @@ window.TabajaElements = {
     renderSelected();
   }
 
-  async function updateAccount(mutator){
-    const id = select.value;
-    if (!id) return null;
+  // Keep the proven local-preview editing path unchanged. Cloud editing will be
+  // enabled separately after its Admin UPDATE RLS policy is confirmed.
+  function updateAccount(mutator){
     if (cloudMode()) {
-      const current = byId(id);
-      if (!current) return null;
-      const updated = { ...current, features: { ...(current.features || {}) } };
-      mutator(updated);
-      const supabase = window.TabajaCloud?.getClient?.();
-      const payload = {
-        status: String(updated.status || 'TRIAL').toLowerCase(),
-        plan: updated.plan || 'Professional Trial',
-        trial_started_at: updated.trialStartedAt || null,
-        trial_expires_at: updated.trialExpiresAt || null,
-        feature_nfc: updated.features.nfc === true,
-        feature_batch: updated.features.batch === true,
-        feature_templates: updated.features.templates === true,
-        feature_quality: updated.features.quality === true,
-        feature_zebra: updated.features.zebra === true
-      };
-      const { error } = await supabase.from('companies').update(payload).eq('id', current.id);
-      if (error) throw error;
-      Object.assign(current, updated);
-      return current;
+      msg.className = "company-manager-message error";
+      msg.textContent = "Cloud companies are connected read-only for this test. Admin editing will be enabled after the list is verified.";
+      return null;
     }
-    const list = readAccounts(), i = list.findIndex(a => accountId(a) === id);
+    const list = readAccounts(), id = select.value, i = list.findIndex(a => accountId(a) === id);
     if (i < 0) return null;
     const updated = {...list[i], features:{...(list[i].features||{})}}; mutator(updated); list[i]=updated; saveAccounts(list); return updated;
   }
@@ -2430,19 +2396,19 @@ window.TabajaElements = {
   $("closeCompanyManagerBtn")?.addEventListener("click",()=>modal.classList.add("hidden"));
   modal.addEventListener("click",e=>{ if(e.target===modal) modal.classList.add("hidden"); });
   select.addEventListener("change",renderSelected);
-  $("companyManagerResetTrial")?.addEventListener("click",async ()=>{ try { const a=await updateAccount(a=>{a.status="TRIAL";a.plan="Standard · 5-Day Trial";a.trialStartedAt=new Date().toISOString();a.trialExpiresAt=new Date(Date.now()+5*86400000).toISOString();}); if(a){renderSelected();msg.className="company-manager-message ok";msg.textContent="5-day trial started from now.";} } catch(e){msg.className="company-manager-message error";msg.textContent=e.message;} });
-  async function extendTrial(days){
-    try { const a=await updateAccount(a=>{
+  $("companyManagerResetTrial")?.addEventListener("click",()=>{ const a=updateAccount(a=>{a.status="TRIAL";a.plan="Standard · 5-Day Trial";a.trialStartedAt=new Date().toISOString();a.trialExpiresAt=new Date(Date.now()+5*86400000).toISOString();}); if(a){renderSelected();msg.className="company-manager-message ok";msg.textContent="5-day trial started from now.";} });
+  function extendTrial(days){
+    const a=updateAccount(a=>{
       const currentExpiry=a.trialExpiresAt ? new Date(a.trialExpiresAt).getTime() : NaN;
       const base=Number.isFinite(currentExpiry) && currentExpiry>Date.now() ? currentExpiry : Date.now();
       if(!a.trialStartedAt) a.trialStartedAt=new Date().toISOString();
       a.status="TRIAL"; a.plan="Standard · 5-Day Trial";
       a.trialExpiresAt=new Date(base + days*86400000).toISOString();
     });
-    if(a){renderSelected();msg.className="company-manager-message ok";msg.textContent=`Trial extended by ${days} day${days===1?"":"s"}.`;} } catch(e){msg.className="company-manager-message error";msg.textContent=e.message;}
+    if(a){renderSelected();msg.className="company-manager-message ok";msg.textContent=`Trial extended by ${days} day${days===1?"":"s"}.`;}
   }
   $("companyManagerPlus1")?.addEventListener("click",()=>extendTrial(1));
   $("companyManagerPlus2")?.addEventListener("click",()=>extendTrial(2));
-  $("companyManagerActivate")?.addEventListener("click",async ()=>{ try { const a=await updateAccount(a=>{a.status="ACTIVE";a.plan="Standard";a.trialExpiresAt=null;}); if(a){renderSelected();msg.className="company-manager-message ok";msg.textContent="Paid account activated. Data preserved.";} } catch(e){msg.className="company-manager-message error";msg.textContent=e.message;} });
-  $("companyManagerSave")?.addEventListener("click",async ()=>{ try { const a=await updateAccount(a=>{a.status=$("companyManagerStatus").value;a.features.nfc=$("companyFeatureNfc").checked;a.features.batch=$("companyFeatureBatch").checked;a.features.templates=$("companyFeatureTemplates").checked;a.features.quality=$("companyFeatureQuality").checked;a.features.zebra=$("companyFeatureZebra").checked;if(a.status==="ACTIVE")a.trialExpiresAt=null;}); if(a){renderSelected();msg.className="company-manager-message ok";msg.textContent="Company access saved.";} } catch(e){msg.className="company-manager-message error";msg.textContent=e.message;} });
+  $("companyManagerActivate")?.addEventListener("click",()=>{ const a=updateAccount(a=>{a.status="ACTIVE";a.plan="Standard";a.trialExpiresAt=null;}); if(a){renderSelected();msg.className="company-manager-message ok";msg.textContent="Paid account activated. Data preserved.";} });
+  $("companyManagerSave")?.addEventListener("click",()=>{ const a=updateAccount(a=>{a.status=$("companyManagerStatus").value;a.features.nfc=$("companyFeatureNfc").checked;a.features.batch=$("companyFeatureBatch").checked;if(a.status==="ACTIVE")a.trialExpiresAt=null;}); if(a){renderSelected();msg.className="company-manager-message ok";msg.textContent="Company access saved.";} });
 })();

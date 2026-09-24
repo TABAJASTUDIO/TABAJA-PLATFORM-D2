@@ -48,13 +48,14 @@
   async function loadWorkspace(userId) {
     const supabase = getClient();
     if (!supabase) return null;
-    const { data, error } = await supabase
-      .from('company_members')
-      .select('role, companies(*)')
-      .eq('user_id', userId)
-      .limit(1)
-      .maybeSingle();
-    if (error) throw error;
+    const extended = 'role, companies(id,name,country,phone,plan,status,licence_expires_at,max_users,feature_nfc,feature_batch,feature_templates,feature_quality,feature_zebra)';
+    const legacy = 'role, companies(id,name,country,phone,plan,status,licence_expires_at,max_users)';
+    let result = await supabase.from('company_members').select(extended).eq('user_id', userId).limit(1).maybeSingle();
+    if (result.error && /column|feature_/i.test(result.error.message || '')) {
+      result = await supabase.from('company_members').select(legacy).eq('user_id', userId).limit(1).maybeSingle();
+    }
+    if (result.error) throw result.error;
+    const data = result.data;
     const company = data?.companies;
     if (!company) return null;
     return {
@@ -67,13 +68,7 @@
       licenceExpiresAt: company.licence_expires_at || null,
       maxUsers: company.max_users || 1,
       role: data.role || 'owner',
-      features: {
-        nfc: company.feature_nfc === true,
-        batch: company.feature_batch === true,
-        templates: company.feature_templates === true,
-        quality: company.feature_quality === true,
-        zebra: company.feature_zebra === true
-      }
+      features: { nfc: company.feature_nfc === true, batch: company.feature_batch === true, templates: company.feature_templates === true, quality: company.feature_quality === true, zebra: company.feature_zebra === true }
     };
   }
 
