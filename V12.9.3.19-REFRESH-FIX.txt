@@ -1,9 +1,0 @@
-Tabaja Solution V12.9.3.19 - Refresh Fix
-
-- Corrected all visible V12.9.3.9 labels to V12.9.3.19.
-- Normalized local JS/CSS cache-busters to V12.9.3.19.
-- Normalized Service Worker app-shell references to V12.9.3.19.
-- Added commercial-templates.js to the app shell.
-- Bumped Service Worker cache identity to force a clean PWA refresh.
-- Kept Supabase/login/company data architecture unchanged.
-- Kept paid feature access logic for NFC, Batch, Templates, Print Quality and Zebra Settings unchanged.
