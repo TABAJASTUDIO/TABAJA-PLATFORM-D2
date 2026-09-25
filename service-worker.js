@@ -1,9 +1,9 @@
-const CACHE_VERSION = 'tabaja-v12.9.3.16-test-fix-2';
+const CACHE_VERSION = 'tabaja-v12.9.3.16-test-fix-3-2';
 const APP_SHELL = [
   './',
   './index.html',
   './style.css?v=12.9.3.14',
-  './app.js?v=12.9.3.16-fix2',
+  './app.js?v=12.9.3.16-fix3',
   './cloud.js?v=12.7.0',
   './v8-ui.js?v=12.9.3.9',
   './employee-manager.js?v=12.9.3.2',
@@ -48,6 +48,8 @@ self.addEventListener('fetch', event => {
   if (request.method !== 'GET') return;
   const url = new URL(request.url);
   const sameOrigin = url.origin === self.location.origin;
+  // Never cache or intercept Supabase/CDN/API requests.
+  if (!sameOrigin) return;
   if (request.mode === 'navigate') {
     event.respondWith(networkFirst(request, './index.html'));
     return;
@@ -58,7 +60,8 @@ self.addEventListener('fetch', event => {
   }
   event.respondWith(caches.match(request).then(cached => cached || fetch(request).then(response => {
     if (response && (response.status === 200 || response.type === 'opaque')) {
-      caches.open(CACHE_VERSION).then(cache => cache.put(request, response.clone()));
+      const responseForCache = response.clone();
+      caches.open(CACHE_VERSION).then(cache => cache.put(request, responseForCache));
     }
     return response;
   })));
