@@ -9,7 +9,8 @@
     nfc: 'NFC Studio • ACS ACR122U smart identity operations',
     batch: 'Print Center / Batch Printing • Excel workflow for up to 50 cards',
     quality: 'Print Center / Print Quality • Professional photo and text rendering',
-    zebra: 'Print Center / Zebra Settings • ZC300 alignment and bleed controls'
+    zebra: 'Print Center / Zebra Settings • ZC300 alignment and bleed controls',
+    elements: 'Emoji & Flags • Design elements for identity cards'
   };
 
   const designerViews = new Set(['designer', 'batch', 'quality', 'zebra']);
@@ -19,7 +20,7 @@
     // Inline visibility is intentional so a stale cached stylesheet cannot stack modules.
     const visibility = {
       v8Dashboard: view === 'dashboard',
-      templateGalleryWorkspace: view === 'templates',
+      templateGalleryWorkspace: view === 'templates' || view === 'elements',
       employeeWorkspace: view === 'employees',
       printCenterWorkspace: view === 'printcenter',
       reportsWorkspace: view === 'reports',
@@ -38,8 +39,17 @@
   function setView(view) {
     if (view === 'nfc' && window.TabajaAccess && !window.TabajaAccess.can('nfc')) view = 'dashboard';
     if (view === 'batch' && window.TabajaAccess && !window.TabajaAccess.can('batch')) view = 'printcenter';
+    if (view === 'elements' && window.TabajaAccess && !window.TabajaAccess.can('elements')) view = 'designer';
     document.body.dataset.v8View = view;
     enforceSingleWorkspace(view);
+    const elementsOnly = view === 'elements';
+    const elementsLibrary = document.getElementById('elementsLibrary');
+    if (elementsLibrary) elementsLibrary.hidden = !elementsOnly;
+    if (elementsOnly) {
+      document.querySelectorAll('#templateGalleryWorkspace > :not(#elementsLibrary)').forEach(el => { el.style.display = 'none'; });
+    } else {
+      document.querySelectorAll('#templateGalleryWorkspace > :not(#elementsLibrary)').forEach(el => { el.style.display = ''; });
+    }
     // Keep production/design controls out of customer-facing module pages.
     const designerTopActions = document.getElementById('designerTopActions');
     if (designerTopActions) {
@@ -51,9 +61,11 @@
     const sub = document.getElementById('pageSubtitle');
     if (sub) sub.textContent = subtitles[view] || subtitles.dashboard;
     const title = document.querySelector('header h1');
-    if (title) title.textContent = ({dashboard:'Command Center',templates:'Card Design Center',designer:'Identity Studio',employees:'Employee Center',printcenter:'Print Center',reports:'Reports',nfc:'NFC Studio',batch:'Batch Printing',quality:'Print Quality',zebra:'Zebra Settings'})[view] || 'Tabaja Solution';
+    if (title) title.textContent = ({dashboard:'Command Center',templates:'Card Design Center',designer:'Identity Studio',employees:'Employee Center',printcenter:'Print Center',reports:'Reports',nfc:'NFC Studio',batch:'Batch Printing',quality:'Print Quality',zebra:'Zebra Settings',elements:'Emoji & Flags'})[view] || 'Tabaja Solution';
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
+
+  window.TabajaSetView = setView;
 
   function init() {
     const qualityTools = document.getElementById('qualityTools');

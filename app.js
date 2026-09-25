@@ -94,7 +94,8 @@ function accountFeatures(account = readAccount()) {
     nfc: isAdmin || account?.features?.nfc === true,
     batch: isAdmin || account?.features?.batch === true,
     qr: isAdmin || account?.features?.qr === true,
-    barcode: isAdmin || account?.features?.barcode === true
+    barcode: isAdmin || account?.features?.barcode === true,
+    elements: isAdmin || account?.features?.elements === true
   };
 }
 function applyFeatureAccess(account = readAccount()) {
@@ -103,10 +104,12 @@ function applyFeatureAccess(account = readAccount()) {
   document.body.dataset.batchAccess = features.batch ? "1" : "0";
   document.body.dataset.qrAccess = features.qr ? "1" : "0";
   document.body.dataset.barcodeAccess = features.barcode ? "1" : "0";
+  document.body.dataset.elementsAccess = features.elements ? "1" : "0";
   document.querySelectorAll('[data-feature="nfc"]').forEach(el => { el.hidden = !features.nfc; el.style.display = features.nfc ? "" : "none"; });
   document.querySelectorAll('[data-feature="batch"]').forEach(el => { el.hidden = !features.batch; el.style.display = features.batch ? "" : "none"; });
   document.querySelectorAll('[data-feature="qr"]').forEach(el => { el.hidden = !features.qr; el.style.display = features.qr ? "" : "none"; });
   document.querySelectorAll('[data-feature="barcode"]').forEach(el => { el.hidden = !features.barcode; el.style.display = features.barcode ? "" : "none"; });
+  document.querySelectorAll('[data-feature="elements"]').forEach(el => { el.hidden = !features.elements; el.style.display = features.elements ? "" : "none"; });
   document.querySelectorAll('[data-admin-only="true"]').forEach(el => { const admin = isTabajaAdmin(account); el.hidden = !admin; el.style.display = admin ? "" : "none"; });
   window.TabajaAccess = { can: feature => Boolean(accountFeatures()[feature]) };
 }
@@ -2326,7 +2329,7 @@ window.TabajaElements = {
       status: String(c.status || 'active').toLowerCase() === 'suspended' ? 'SUSPENDED' : String(c.status || 'active').toLowerCase() === 'expired' ? 'EXPIRED' : (c.trial_expires_at ? 'TRIAL' : 'ACTIVE'),
       trialStartedAt: c.trial_started_at || null,
       trialExpiresAt: c.trial_expires_at || c.licence_expires_at || null,
-      features: { nfc: c.feature_nfc === true, batch: c.feature_batch === true, qr: c.feature_qr === true, barcode: c.feature_barcode === true },
+      features: { nfc: c.feature_nfc === true, batch: c.feature_batch === true, qr: c.feature_qr === true, barcode: c.feature_barcode === true, elements: c.feature_elements === true },
       cloud: true
     }));
   }
@@ -2347,6 +2350,7 @@ window.TabajaElements = {
     $("companyFeatureBatch").checked = a.features?.batch === true;
     $("companyFeatureQr").checked = a.features?.qr === true;
     $("companyFeatureBarcode").checked = a.features?.barcode === true;
+    $("companyFeatureElements").checked = a.features?.elements === true;
     const left = daysLeft(a);
     const trialDetails = a.trialStartedAt || a.trialExpiresAt
       ? `<div class="company-trial-details"><div><span>Trial started</span><b>${fmtDate(a.trialStartedAt)}</b></div><div><span>Trial expires</span><b>${fmtDate(a.trialExpiresAt)}</b></div><div><span>Days remaining</span><b>${left === null ? "—" : left}</b></div></div>`
@@ -2382,7 +2386,8 @@ window.TabajaElements = {
         feature_nfc: updated.features?.nfc === true,
         feature_batch: updated.features?.batch === true,
         feature_qr: updated.features?.qr === true,
-        feature_barcode: updated.features?.barcode === true
+        feature_barcode: updated.features?.barcode === true,
+        feature_elements: updated.features?.elements === true
       };
       const { data, error } = await supabase.from('companies').update(payload).eq('id', current.id).select('*').single();
       if (error) throw error;
@@ -2392,7 +2397,7 @@ window.TabajaElements = {
         status: updated.status,
         trialStartedAt: data.trial_started_at || null,
         trialExpiresAt: data.trial_expires_at || data.licence_expires_at || null,
-        features: { nfc: data.feature_nfc === true, batch: data.feature_batch === true, qr: data.feature_qr === true, barcode: data.feature_barcode === true }
+        features: { nfc: data.feature_nfc === true, batch: data.feature_batch === true, qr: data.feature_qr === true, barcode: data.feature_barcode === true, elements: data.feature_elements === true }
       };
       const i = cloudCompanies.findIndex(a => a.id === current.id);
       if (i >= 0) cloudCompanies[i] = mapped;
@@ -2464,5 +2469,5 @@ window.TabajaElements = {
   $("companyManagerPlus1")?.addEventListener("click",()=>extendTrial(1));
   $("companyManagerPlus2")?.addEventListener("click",()=>extendTrial(2));
   $("companyManagerActivate")?.addEventListener("click",()=>runUpdate(a=>{a.status="ACTIVE";a.plan="Standard";a.trialExpiresAt=null;}, "Paid account activated. Data preserved."));
-  $("companyManagerSave")?.addEventListener("click",()=>runUpdate(a=>{a.status=$("companyManagerStatus").value;a.features.nfc=$("companyFeatureNfc").checked;a.features.batch=$("companyFeatureBatch").checked;a.features.qr=$("companyFeatureQr").checked;a.features.barcode=$("companyFeatureBarcode").checked;if(a.status==="ACTIVE")a.trialExpiresAt=null;}, "Company access saved."));
+  $("companyManagerSave")?.addEventListener("click",()=>runUpdate(a=>{a.status=$("companyManagerStatus").value;a.features.nfc=$("companyFeatureNfc").checked;a.features.batch=$("companyFeatureBatch").checked;a.features.qr=$("companyFeatureQr").checked;a.features.barcode=$("companyFeatureBarcode").checked;a.features.elements=$("companyFeatureElements").checked;if(a.status==="ACTIVE")a.trialExpiresAt=null;}, "Company access saved."));
 })();

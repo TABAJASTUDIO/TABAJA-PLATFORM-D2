@@ -56,9 +56,9 @@
     const elements=document.getElementById('elementsLibrary');
     document.querySelector('[data-quick-go="collections"]')?.addEventListener('click',()=>document.getElementById('collectionHome')?.scrollIntoView({behavior:'smooth'}));
     document.querySelector('[data-quick-go="templates"]')?.addEventListener('click',()=>openBrowser('all'));
-    document.querySelector('[data-quick-go="elements"]')?.addEventListener('click',()=>{elements.hidden=false;elements.scrollIntoView({behavior:'smooth',block:'start'});});
-    document.getElementById('closeElementsLibrary')?.addEventListener('click',()=>{elements.hidden=true;document.getElementById('collectionHome')?.scrollIntoView({behavior:'smooth'});});
-    document.getElementById('openElementsBtn')?.addEventListener('click',()=>{go('templates');setTimeout(()=>{elements.hidden=false;elements.scrollIntoView({behavior:'smooth',block:'start'});},100);});
+    document.querySelector('[data-quick-go="elements"]')?.addEventListener('click',()=>window.TabajaSetView?.('elements'));
+    document.getElementById('closeElementsLibrary')?.addEventListener('click',()=>window.TabajaSetView?.('designer'));
+    document.getElementById('openElementsBtn')?.addEventListener('click',()=>window.TabajaSetView?.('elements'));
     document.querySelectorAll('[data-card-symbol]').forEach(btn=>btn.addEventListener('click',()=>{
       const symbol=btn.dataset.cardSymbol;
       if(window.TabajaElements?.addSymbol(symbol)){go('designer');}

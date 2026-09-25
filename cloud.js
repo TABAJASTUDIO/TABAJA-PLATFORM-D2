@@ -50,7 +50,7 @@
     if (!supabase) return null;
     const { data, error } = await supabase
       .from('company_members')
-      .select('role, companies(id,name,country,phone,plan,status,licence_expires_at,max_users,trial_started_at,trial_expires_at,feature_nfc,feature_batch,feature_qr,feature_barcode)')
+      .select('role, companies(id,name,country,phone,plan,status,licence_expires_at,max_users,trial_started_at,trial_expires_at,feature_nfc,feature_batch,feature_qr,feature_barcode,feature_elements)')
       .eq('user_id', userId)
       .limit(1)
       .maybeSingle();
@@ -68,7 +68,7 @@
       maxUsers: company.max_users || 1,
       trialStartedAt: company.trial_started_at || null,
       trialExpiresAt: company.trial_expires_at || company.licence_expires_at || null,
-      features: { nfc: company.feature_nfc === true, batch: company.feature_batch === true, qr: company.feature_qr === true, barcode: company.feature_barcode === true },
+      features: { nfc: company.feature_nfc === true, batch: company.feature_batch === true, qr: company.feature_qr === true, barcode: company.feature_barcode === true, elements: company.feature_elements === true },
       role: data.role || 'owner'
     };
   }
@@ -121,6 +121,7 @@
         feature_batch: false,
         feature_qr: false,
         feature_barcode: false,
+        feature_elements: false,
         max_users: 3,
         owner_user_id: data.user.id
       })
@@ -146,7 +147,7 @@
       status: company.trial_expires_at ? 'TRIAL' : 'ACTIVE',
       trialStartedAt: company.trial_started_at || null,
       trialExpiresAt: company.trial_expires_at || null,
-      features: { nfc: company.feature_nfc === true, batch: company.feature_batch === true, qr: company.feature_qr === true, barcode: company.feature_barcode === true },
+      features: { nfc: company.feature_nfc === true, batch: company.feature_batch === true, qr: company.feature_qr === true, barcode: company.feature_barcode === true, elements: company.feature_elements === true },
       maxUsers: company.max_users,
       role: 'owner',
       cloud: true
