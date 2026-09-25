@@ -1,8 +1,8 @@
-﻿(() => {
+(() => {
   'use strict';
 
   const BRIDGE_ORIGIN = `${window.location.protocol}//${window.location.hostname}:8766`;
-  const IS_LOCAL_BRIDGE_APP = window.location.port === '8766';
+  const IS_LOCAL_BRIDGE_APP = window.location.port === '8766' && new URLSearchParams(window.location.search).get('nfc-local') === '1';
 
   const $ = id => document.getElementById(id);
   const els = {

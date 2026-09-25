@@ -1,16 +1,16 @@
-const CACHE_VERSION = 'tabaja-v12.9.3.16-password-recovery';
+const CACHE_VERSION = 'tabaja-v12.9.3.16-test-fix-2';
 const APP_SHELL = [
   './',
   './index.html',
   './style.css?v=12.9.3.14',
-  './app.js?v=12.9.3.16',
+  './app.js?v=12.9.3.16-fix2',
   './cloud.js?v=12.7.0',
   './v8-ui.js?v=12.9.3.9',
   './employee-manager.js?v=12.9.3.2',
   './activity-store.js?v=12.9.3.2',
   './command-center.js?v=12.9.3.5',
   './pwa.js?v=12.9.3.16',
-  './nfc-studio.js?v=12.9.3-local-pwa',
+  './nfc-studio.js?v=12.9.3-local-pwa-fix2',
   './manifest.webmanifest',
   './icons/icon-192.png',
   './icons/icon-512.png',

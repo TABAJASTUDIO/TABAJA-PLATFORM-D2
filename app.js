@@ -103,6 +103,7 @@ function applyFeatureAccess(account = readAccount()) {
   document.body.dataset.batchAccess = features.batch ? "1" : "0";
   document.querySelectorAll('[data-feature="nfc"]').forEach(el => { el.hidden = !features.nfc; el.style.display = features.nfc ? "" : "none"; });
   document.querySelectorAll('[data-feature="batch"]').forEach(el => { el.hidden = !features.batch; el.style.display = features.batch ? "" : "none"; });
+  document.querySelectorAll('[data-admin-only="true"]').forEach(el => { const admin = isTabajaAdmin(account); el.hidden = !admin; el.style.display = admin ? "" : "none"; });
   window.TabajaAccess = { can: feature => Boolean(accountFeatures()[feature]) };
 }
 
@@ -219,7 +220,14 @@ $("loginForm").addEventListener("submit", async e => {
     if (cloudMode() && user.includes("@")) {
       const cloudAccount = await window.TabajaCloud.signIn(user, pass);
       if (cloudAccount?.cloudAdmin) setActiveAccount(defaultAccount);
-      localStorage.setItem(LOGIN_KEY, "1");
+      else if (cloudAccount) {
+        const accessError = accountAccessError(cloudAccount);
+        if (accessError) { await window.TabajaCloud.signOut(); throw new Error(accessError); }
+        setActiveAccount(cloudAccount);
+      }
+      localStorage.removeItem(LOGIN_KEY);
+      sessionStorage.removeItem(LOGIN_KEY);
+      ($('rememberLogin').checked ? localStorage : sessionStorage).setItem(LOGIN_KEY, "1");
       sessionStorage.removeItem(LOGIN_KEY);
       showApp();
       return;
@@ -263,6 +271,8 @@ showApp();
   } finally { setAuthBusy("loginForm", false); }
 });
 
+let adminCreateCompanyMode = false;
+
 $("registerForm").addEventListener("submit", async e => {
   e.preventDefault();
   $("registerError").textContent = "";
@@ -276,7 +286,9 @@ $("registerForm").addEventListener("submit", async e => {
   setAuthBusy("registerForm", true, "Creating company…");
   try {
     if (cloudMode()) {
+      const returnToAdmin = adminCreateCompanyMode && isTabajaAdmin();
       await window.TabajaCloud.signUp(payload);
+      if (returnToAdmin) setActiveAccount(defaultAccount);
     } else {
       const exists = readAccounts().some(a =>
   String(a.email || "").toLowerCase() === payload.email
@@ -302,7 +314,14 @@ writeAccount({
 });
     }
     localStorage.setItem(LOGIN_KEY, "1"); sessionStorage.removeItem(LOGIN_KEY);
-    showApp();
+    if (adminCreateCompanyMode) {
+      adminCreateCompanyMode = false;
+      setActiveAccount(defaultAccount);
+      showApp();
+      setTimeout(() => $("companyManagerBtn")?.click(), 150);
+    } else {
+      showApp();
+    }
   } catch (error) {
     $("registerError").textContent = error.message || "Unable to create company account.";
   } finally { setAuthBusy("registerForm", false); }
@@ -2302,7 +2321,7 @@ window.TabajaElements = {
       country: c.country || '',
       phone: c.phone || '',
       plan: c.plan || 'Professional Trial',
-      status: String(c.status || 'TRIAL').toUpperCase(),
+      status: String(c.status || 'active').toLowerCase() === 'suspended' ? 'SUSPENDED' : String(c.status || 'active').toLowerCase() === 'expired' ? 'EXPIRED' : (c.trial_expires_at ? 'TRIAL' : 'ACTIVE'),
       trialStartedAt: c.trial_started_at || null,
       trialExpiresAt: c.trial_expires_at || c.licence_expires_at || null,
       features: { nfc: c.feature_nfc === true, batch: c.feature_batch === true },
@@ -2338,17 +2357,46 @@ window.TabajaElements = {
     renderSelected();
   }
 
-  // Keep the proven local-preview editing path unchanged. Cloud editing will be
-  // enabled separately after its Admin UPDATE RLS policy is confirmed.
-  function updateAccount(mutator){
+  async function updateAccount(mutator){
+    const id = select.value;
+    if (!id) return null;
+
     if (cloudMode()) {
-      msg.className = "company-manager-message error";
-      msg.textContent = "Cloud companies are connected read-only for this test. Admin editing will be enabled after the list is verified.";
-      return null;
+      const current = byId(id);
+      if (!current) return null;
+      const updated = {...current, features:{...(current.features||{})}};
+      mutator(updated);
+      const supabase = window.TabajaCloud?.getClient?.();
+      if (!supabase) throw new Error("Cloud is not configured.");
+
+      const dbStatus = updated.status === "SUSPENDED" ? "suspended" : updated.status === "EXPIRED" ? "expired" : "active";
+      const payload = {
+        plan: updated.plan || "Professional Trial",
+        status: dbStatus,
+        trial_started_at: updated.trialStartedAt || null,
+        trial_expires_at: updated.trialExpiresAt || null,
+        feature_nfc: updated.features?.nfc === true,
+        feature_batch: updated.features?.batch === true
+      };
+      const { data, error } = await supabase.from('companies').update(payload).eq('id', current.id).select('*').single();
+      if (error) throw error;
+      const mapped = {
+        ...updated,
+        plan: data.plan || updated.plan,
+        status: updated.status,
+        trialStartedAt: data.trial_started_at || null,
+        trialExpiresAt: data.trial_expires_at || data.licence_expires_at || null,
+        features: { nfc: data.feature_nfc === true, batch: data.feature_batch === true }
+      };
+      const i = cloudCompanies.findIndex(a => a.id === current.id);
+      if (i >= 0) cloudCompanies[i] = mapped;
+      return mapped;
     }
-    const list = readAccounts(), id = select.value, i = list.findIndex(a => accountId(a) === id);
+
+    const list = readAccounts(), i = list.findIndex(a => accountId(a) === id);
     if (i < 0) return null;
-    const updated = {...list[i], features:{...(list[i].features||{})}}; mutator(updated); list[i]=updated; saveAccounts(list); return updated;
+    const updated = {...list[i], features:{...(list[i].features||{})}};
+    mutator(updated); list[i]=updated; saveAccounts(list); return updated;
   }
 
   $("companyManagerBtn")?.addEventListener("click", async ()=>{
@@ -2364,22 +2412,51 @@ window.TabajaElements = {
       msg.textContent=error.message || "Unable to load companies.";
     }
   });
+  $("companyManagerCreate")?.addEventListener("click",()=>{
+    if(!isTabajaAdmin()) return;
+    adminCreateCompanyMode = true;
+    modal.classList.add("hidden");
+    $("appShell").classList.add("hidden");
+    $("loginScreen").classList.remove("hidden");
+    showAuthView("register");
+    $("registerForm")?.reset();
+    if ($("registerCountry")) $("registerCountry").value = "Sierra Leone";
+  });
   $("closeCompanyManagerBtn")?.addEventListener("click",()=>modal.classList.add("hidden"));
   modal.addEventListener("click",e=>{ if(e.target===modal) modal.classList.add("hidden"); });
   select.addEventListener("change",renderSelected);
-  $("companyManagerResetTrial")?.addEventListener("click",()=>{ const a=updateAccount(a=>{a.status="TRIAL";a.plan="Standard · 5-Day Trial";a.trialStartedAt=new Date().toISOString();a.trialExpiresAt=new Date(Date.now()+5*86400000).toISOString();}); if(a){renderSelected();msg.className="company-manager-message ok";msg.textContent="5-day trial started from now.";} });
-  function extendTrial(days){
-    const a=updateAccount(a=>{
+
+  async function runUpdate(mutator, successMessage){
+    msg.textContent="";
+    try {
+      const a=await updateAccount(mutator);
+      if(!a) return;
+      renderSelected();
+      msg.className="company-manager-message ok";
+      msg.textContent=successMessage;
+    } catch(error) {
+      msg.className="company-manager-message error";
+      msg.textContent=error.message || "Unable to save company access.";
+    }
+  }
+
+  $("companyManagerResetTrial")?.addEventListener("click",()=>runUpdate(a=>{
+    a.status="TRIAL"; a.plan="Standard · 5-Day Trial";
+    a.trialStartedAt=new Date().toISOString();
+    a.trialExpiresAt=new Date(Date.now()+5*86400000).toISOString();
+  }, "5-day trial started from now."));
+
+  async function extendTrial(days){
+    await runUpdate(a=>{
       const currentExpiry=a.trialExpiresAt ? new Date(a.trialExpiresAt).getTime() : NaN;
       const base=Number.isFinite(currentExpiry) && currentExpiry>Date.now() ? currentExpiry : Date.now();
       if(!a.trialStartedAt) a.trialStartedAt=new Date().toISOString();
       a.status="TRIAL"; a.plan="Standard · 5-Day Trial";
       a.trialExpiresAt=new Date(base + days*86400000).toISOString();
-    });
-    if(a){renderSelected();msg.className="company-manager-message ok";msg.textContent=`Trial extended by ${days} day${days===1?"":"s"}.`;}
+    }, `Trial extended by ${days} day${days===1?"":"s"}.`);
   }
   $("companyManagerPlus1")?.addEventListener("click",()=>extendTrial(1));
   $("companyManagerPlus2")?.addEventListener("click",()=>extendTrial(2));
-  $("companyManagerActivate")?.addEventListener("click",()=>{ const a=updateAccount(a=>{a.status="ACTIVE";a.plan="Standard";a.trialExpiresAt=null;}); if(a){renderSelected();msg.className="company-manager-message ok";msg.textContent="Paid account activated. Data preserved.";} });
-  $("companyManagerSave")?.addEventListener("click",()=>{ const a=updateAccount(a=>{a.status=$("companyManagerStatus").value;a.features.nfc=$("companyFeatureNfc").checked;a.features.batch=$("companyFeatureBatch").checked;if(a.status==="ACTIVE")a.trialExpiresAt=null;}); if(a){renderSelected();msg.className="company-manager-message ok";msg.textContent="Company access saved.";} });
+  $("companyManagerActivate")?.addEventListener("click",()=>runUpdate(a=>{a.status="ACTIVE";a.plan="Standard";a.trialExpiresAt=null;}, "Paid account activated. Data preserved."));
+  $("companyManagerSave")?.addEventListener("click",()=>runUpdate(a=>{a.status=$("companyManagerStatus").value;a.features.nfc=$("companyFeatureNfc").checked;a.features.batch=$("companyFeatureBatch").checked;if(a.status==="ACTIVE")a.trialExpiresAt=null;}, "Company access saved."));
 })();

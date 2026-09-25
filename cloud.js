@@ -50,7 +50,7 @@
     if (!supabase) return null;
     const { data, error } = await supabase
       .from('company_members')
-      .select('role, companies(id,name,country,phone,plan,status,licence_expires_at,max_users)')
+      .select('role, companies(id,name,country,phone,plan,status,licence_expires_at,max_users,trial_started_at,trial_expires_at,feature_nfc,feature_batch)')
       .eq('user_id', userId)
       .limit(1)
       .maybeSingle();
@@ -63,9 +63,12 @@
       country: company.country || '',
       phone: company.phone || '',
       plan: company.plan || 'Professional',
-      status: company.status || 'active',
+      status: String(company.status || 'active').toLowerCase() === 'suspended' ? 'SUSPENDED' : String(company.status || 'active').toLowerCase() === 'expired' ? 'EXPIRED' : (company.trial_expires_at ? 'TRIAL' : 'ACTIVE'),
       licenceExpiresAt: company.licence_expires_at || null,
       maxUsers: company.max_users || 1,
+      trialStartedAt: company.trial_started_at || null,
+      trialExpiresAt: company.trial_expires_at || company.licence_expires_at || null,
+      features: { nfc: company.feature_nfc === true, batch: company.feature_batch === true },
       role: data.role || 'owner'
     };
   }
@@ -110,8 +113,12 @@
         name: payload.company,
         country: payload.country,
         phone: payload.phone,
-        plan: 'Professional Trial',
+        plan: 'Standard · 5-Day Trial',
         status: 'active',
+        trial_started_at: new Date().toISOString(),
+        trial_expires_at: new Date(Date.now() + 5 * 86400000).toISOString(),
+        feature_nfc: false,
+        feature_batch: false,
         max_users: 3,
         owner_user_id: data.user.id
       })
@@ -134,7 +141,10 @@
       country: payload.country,
       phone: payload.phone,
       plan: company.plan,
-      status: company.status,
+      status: company.trial_expires_at ? 'TRIAL' : 'ACTIVE',
+      trialStartedAt: company.trial_started_at || null,
+      trialExpiresAt: company.trial_expires_at || null,
+      features: { nfc: company.feature_nfc === true, batch: company.feature_batch === true },
       maxUsers: company.max_users,
       role: 'owner',
       cloud: true
