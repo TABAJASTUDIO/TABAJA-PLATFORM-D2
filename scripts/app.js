@@ -3,8 +3,6 @@ const CARD = {
   portrait:  { w: 638, h: 1011, mmW: 53.98, mmH: 85.6 }
 };
 
-const LOGIN_USER = "admin";
-const LOGIN_PASSWORD = "Tabaja@2026";
 const LOGIN_KEY = "tabaja_card_designer_login";
 
 const $ = id => document.getElementById(id);
@@ -33,14 +31,7 @@ $("loginForm").addEventListener("submit", e => {
   e.preventDefault();
   const user = $("loginUser").value.trim();
   const pass = $("loginPassword").value;
-  if (user === LOGIN_USER && pass === LOGIN_PASSWORD) {
-    localStorage.removeItem(LOGIN_KEY);
-    sessionStorage.removeItem(LOGIN_KEY);
-    ($("rememberLogin").checked ? localStorage : sessionStorage).setItem(LOGIN_KEY, "1");
-    showApp();
-  } else {
-    $("loginError").textContent = "Incorrect username or password.";
-  }
+  $("loginError").textContent = "Cloud sign-in is required on this build.";
 });
 
 $("logoutBtn").onclick = () => {
