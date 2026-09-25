@@ -1,5 +1,0 @@
-V12.9.3.18 - Admin Feature Access
-Default customer access: Ready Templates OFF, Print Quality OFF, Zebra Settings OFF.
-Dashboard template metric is hidden when Templates are OFF.
-Admin always has access. Company Manager includes three new toggles for optional customer access.
-For cloud toggles to persist, run SUPABASE-V12.9.3.18-FEATURE-ACCESS.sql once in Supabase SQL Editor.
