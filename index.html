@@ -433,10 +433,10 @@
         <button id="cropBtn">Crop Mode</button>
         <button id="resetImageBtn">Reset Image</button>
         <button id="rotateImageBtn">Rotate Image 90°</button>
-        <button id="qrBtn">QR Code</button>
-        <button id="barcodeBtn">Barcode</button>
+        <button id="qrBtn" data-feature="qr">QR Code</button>
+        <button id="barcodeBtn" data-feature="barcode">Barcode</button>
         <button id="duplicateBtn">Duplicate</button>
-        <button id="nfcBtn">NFC Link</button>
+        <button id="nfcBtn" data-feature="nfc">NFC Link</button>
         <hr>
         <button id="frontBtn" class="active">Front</button>
         <button id="backBtn">Back</button>
@@ -694,7 +694,7 @@
           <label>Status<select id="companyManagerStatus"><option value="TRIAL">TRIAL</option><option value="ACTIVE">ACTIVE</option><option value="EXPIRED">EXPIRED</option><option value="SUSPENDED">SUSPENDED</option></select></label>
           <div class="company-manager-actions"><button id="companyManagerResetTrial" type="button">Start / Reset 5-Day Trial</button><button id="companyManagerActivate" type="button">Activate Paid Account</button></div>
           <div class="company-manager-extend"><span>Extend trial</span><button id="companyManagerPlus1" type="button">+1 Day</button><button id="companyManagerPlus2" type="button">+2 Days</button></div>
-          <fieldset><legend>Paid add-ons</legend><label class="company-feature-toggle"><input id="companyFeatureNfc" type="checkbox"> NFC Studio</label><label class="company-feature-toggle"><input id="companyFeatureBatch" type="checkbox"> Batch Printing</label></fieldset>
+          <fieldset><legend>Paid add-ons</legend><label class="company-feature-toggle"><input id="companyFeatureNfc" type="checkbox"> NFC Studio</label><label class="company-feature-toggle"><input id="companyFeatureBatch" type="checkbox"> Batch Printing</label><label class="company-feature-toggle"><input id="companyFeatureQr" type="checkbox"> QR Code</label><label class="company-feature-toggle"><input id="companyFeatureBarcode" type="checkbox"> Barcode</label></fieldset>
           <button id="companyManagerSave" class="primary" type="button">Save Company Access</button>
           <div id="companyManagerMessage" class="company-manager-message"></div>
         </div>
@@ -726,8 +726,8 @@
     <span>A new version is ready.</span>
     <button id="pwaUpdateBtn" type="button">Update now</button>
   </div>
-  <script defer src="cloud.js?v=12.9.3.16"></script>
-  <script defer src="app.js?v=12.9.3.16-fix3"></script>
+  <script defer src="cloud.js?v=12.9.3.16-fix4"></script>
+  <script defer src="app.js?v=12.9.3.16-fix4"></script>
   <script defer src="commercial-templates.js?v=12.7.0-fix2"></script>
   <script defer src="v8-ui.js?v=12.7.0"></script>
   <script defer src="employee-manager.js?v=12.9.3.2"></script>

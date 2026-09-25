@@ -1,0 +1,9 @@
+FIX-4 based on verified FIX-3.2.
+Changes only:
+- Company Manager: QR Code and Barcode ON/OFF controls.
+- Customer Designer: QR Code follows QR permission; Barcode follows Barcode permission.
+- NFC Link follows existing NFC permission.
+- Owner/Admin always sees NFC Link, QR Code and Barcode.
+- Zebra Settings unchanged (Admin-only).
+- Batch and NFC existing behavior preserved.
+Run FIX-4-SUPABASE.sql once before testing cloud customer access.
