@@ -1,10 +1,10 @@
-const CACHE_VERSION = 'tabaja-v12.9.3.16-test-fix-5';
+const CACHE_VERSION = 'tabaja-v12.9.3.16-cloud-ready1';
 const APP_SHELL = [
   './',
   './index.html',
   './style.css?v=12.9.3.14',
   './app.js?v=12.9.3.16-fix5',
-  './cloud.js?v=12.9.3.16-fix4',
+  './cloud.js?v=12.9.3.16-cloud-ready1',
   './v8-ui.js?v=12.9.3.16-fix5',
   './employee-manager.js?v=12.9.3.2',
   './activity-store.js?v=12.9.3.2',

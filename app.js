@@ -423,7 +423,7 @@ $("testCloudBtn").onclick = async () => {
   } finally { $("testCloudBtn").disabled = false; }
 };
 $("disconnectCloudBtn").onclick = () => {
-  localStorage.removeItem("tabaja_cloud_config_v101");
+  localStorage.setItem("tabaja_cloud_config_v101", "{}");
   $("cloudProjectUrl").value = ""; $("cloudAnonKey").value = "";
   $("cloudSetupMessage").textContent = "Cloud disconnected. Local preview mode is active.";
   updateCloudUI();

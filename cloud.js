@@ -4,11 +4,18 @@
   const CONFIG_KEY = 'tabaja_cloud_config_v101';
   const ACCOUNT_KEY = 'tabaja_card_designer_account_v10';
   const ADMIN_USER_ID = '74cdabd7-4fb6-4016-bf68-cfac6bb17c14';
+  const DEFAULT_CONFIG = Object.freeze({
+    url: 'https://svekgqddidlxlpfbxwtp.supabase.co',
+    anonKey: 'sb_publishable_TUaRRN6OZtxw2dsxa3Uwbg_Q7zRsxRi'
+  });
   let client = null;
 
   function readConfig() {
-    try { return JSON.parse(localStorage.getItem(CONFIG_KEY)) || {}; }
-    catch { return {}; }
+    try {
+      const stored = localStorage.getItem(CONFIG_KEY);
+      if (stored !== null) return JSON.parse(stored) || {};
+      return { ...DEFAULT_CONFIG };
+    } catch { return { ...DEFAULT_CONFIG }; }
   }
 
   function saveConfig(config) {
