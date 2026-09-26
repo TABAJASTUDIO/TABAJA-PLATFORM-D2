@@ -1,0 +1,13 @@
+FIX 5.5 - Company provisioning after confirmed sign-in
+
+Changed only the company provisioning path:
+- Email / Resend / confirmation flow unchanged.
+- Password/login flow unchanged.
+- Existing RLS policies are not disabled or weakened.
+- After confirmed sign-in, cloud.js calls provision_my_company().
+- The database function uses auth.uid() and atomically creates companies + company_members.
+- Prevents partial company creation and returns an existing membership if already provisioned.
+- Trial remains exactly 5 days.
+- index.html and service-worker.js changed only to force the new cloud.js cache version.
+
+IMPORTANT: Run FIX-5.5-SUPABASE.sql once in Supabase SQL Editor before testing this build.

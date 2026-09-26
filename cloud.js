@@ -111,36 +111,21 @@
     const trialStartedAt = new Date().toISOString();
     const trialExpiresAt = new Date(Date.now() + 5 * 86400000).toISOString();
 
-    const { data: company, error: companyError } = await supabase
-      .from('companies')
-      .insert({
-        name: companyName,
-        country,
-        phone,
-        plan: 'Standard · 5-Day Trial',
-        status: 'active',
-        trial_started_at: trialStartedAt,
-        trial_expires_at: trialExpiresAt,
-        feature_nfc: false,
-        feature_batch: false,
-        feature_qr: false,
-        feature_barcode: false,
-        feature_elements: false,
-        max_users: 3,
-        owner_user_id: user.id
-      })
-      .select()
-      .single();
-    if (companyError) throw companyError;
-
-    const { error: memberError } = await supabase.from('company_members').insert({
-      company_id: company.id,
-      user_id: user.id,
-      role: 'owner'
+    // FIX 5.5: provision company + initial owner membership atomically on the
+    // database side. The RPC derives the owner from auth.uid(), so the browser
+    // never needs to bypass RLS and cannot provision a company for another user.
+    const { error: provisionError } = await supabase.rpc('provision_my_company', {
+      p_name: companyName,
+      p_country: country,
+      p_phone: phone,
+      p_trial_started_at: trialStartedAt,
+      p_trial_expires_at: trialExpiresAt
     });
-    if (memberError) throw memberError;
+    if (provisionError) throw provisionError;
 
-    return await loadWorkspace(user.id);
+    const workspace = await loadWorkspace(user.id);
+    if (!workspace) throw new Error('Company workspace provisioning did not complete. Please sign in again.');
+    return workspace;
   }
 
   async function signIn(email, password) {
