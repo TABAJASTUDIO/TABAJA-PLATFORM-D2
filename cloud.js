@@ -109,7 +109,14 @@
     const { data, error } = await supabase.auth.signUp({
       email: payload.email,
       password: payload.password,
-      options: { data: { full_name: payload.owner } }
+      options: {
+        data: {
+          full_name: payload.owner,
+          company: payload.company,
+          country: payload.country,
+          phone: payload.phone
+        }
+      }
     });
     if (error) throw error;
     if (!data.user) throw new Error('Account creation did not return a user.');
