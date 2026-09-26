@@ -1,0 +1,8 @@
+FIX 5.4 - RLS authenticated session binding
+
+Only cloud company-creation authentication flow changed.
+- Confirmation/email flow unchanged.
+- Verifies active Supabase session and user before company INSERT.
+- Explicitly binds sign-in session before RLS-protected writes.
+- Company/member/trial payload unchanged.
+- index/service-worker changed only for cache versioning of cloud.js.

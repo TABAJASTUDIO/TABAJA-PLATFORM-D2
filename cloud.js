@@ -84,6 +84,21 @@
     const supabase = getClient();
     if (!supabase || !user?.id) return null;
 
+    // FIX 5.4: never write company rows until the Supabase client has a real
+    // authenticated session. RLS checks auth.uid() from the request JWT.
+    const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+    if (sessionError) throw sessionError;
+    const sessionUser = sessionData?.session?.user;
+    if (!sessionUser?.id) throw new Error('Authenticated session is not ready. Please sign in again.');
+
+    const { data: verifiedData, error: verifiedError } = await supabase.auth.getUser();
+    if (verifiedError) throw verifiedError;
+    const authenticatedUser = verifiedData?.user;
+    if (!authenticatedUser?.id || authenticatedUser.id !== sessionUser.id) {
+      throw new Error('Authenticated user could not be verified. Please sign in again.');
+    }
+
+    user = authenticatedUser;
     const existing = await loadWorkspace(user.id);
     if (existing) return existing;
 
@@ -133,6 +148,15 @@
     if (!supabase) throw new Error('Cloud is not configured. Open Cloud Setup first.');
     const { data, error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) throw error;
+
+    // FIX 5.4: explicitly bind the returned session before any RLS-protected insert.
+    if (data.session?.access_token && data.session?.refresh_token) {
+      const { error: setSessionError } = await supabase.auth.setSession({
+        access_token: data.session.access_token,
+        refresh_token: data.session.refresh_token
+      });
+      if (setSessionError) throw setSessionError;
+    }
 
     if (data.user?.id === ADMIN_USER_ID) {
       return { cloudAdmin: true, userId: data.user.id, email: data.user.email, cloud: true };

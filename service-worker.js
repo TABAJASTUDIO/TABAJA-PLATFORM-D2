@@ -1,10 +1,10 @@
-const CACHE_VERSION = 'tabaja-v12.9.3.16-fix5.3-confirm-flow1';
+const CACHE_VERSION = 'tabaja-v12.9.3.16-fix5.4-rls-session1';
 const APP_SHELL = [
   './',
   './index.html',
   './style.css?v=12.9.3.14',
   './app.js?v=12.9.3.16-fix5.3-confirm-flow1',
-  './cloud.js?v=12.9.3.16-cloud-ready1',
+  './cloud.js?v=12.9.3.16-fix5.4-rls-session1',
   './v8-ui.js?v=12.9.3.16-fix5',
   './employee-manager.js?v=12.9.3.2',
   './activity-store.js?v=12.9.3.2',
