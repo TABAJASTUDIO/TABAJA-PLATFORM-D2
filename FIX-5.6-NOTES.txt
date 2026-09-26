@@ -1,0 +1,11 @@
+TABaja Solution FIX 5.6
+
+Purpose:
+- Restore the proven FIX 5.1 company + owner creation logic.
+- Keep the current email-confirmation flow.
+- Create the company only after confirmed user successfully signs in.
+- Start a fresh 5-day trial at first successful provisioning.
+- Keep existing RLS policies and existing companies unchanged.
+- Cache-bust cloud.js/service worker so GitHub Pages loads this fix.
+
+No new SQL is required for this test.
