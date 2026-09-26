@@ -1,0 +1,16 @@
+FIX 5.5.2 - Reliable first sign-in company provisioning
+
+Problem fixed:
+- A confirmed user could sign in successfully but no company/company_members row was created.
+- The UI then interpreted the missing trial expiry as an expired trial.
+
+Changes:
+1. cloud.js no longer silently returns null when client-side company metadata is unavailable.
+2. provision_my_company now safely recovers company/country/phone from auth.users.raw_user_meta_data using auth.uid().
+3. Company + owner membership remain atomic through the existing SECURITY DEFINER RPC.
+4. New companies still start as Standard · 5-Day Trial, active, with a 5-day expiry.
+5. Existing companies, memberships, RLS policies and feature permissions are not modified.
+
+Required deployment:
+- Run the updated FIX-5.5-SUPABASE.sql once in Supabase SQL Editor.
+- Upload/commit the updated web files to GitHub Pages.

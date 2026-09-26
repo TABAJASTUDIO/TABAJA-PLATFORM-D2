@@ -18,13 +18,29 @@ as $$
 declare
   v_user uuid := auth.uid();
   v_company uuid;
+  v_meta jsonb;
+  v_name text;
+  v_country text;
+  v_phone text;
 begin
   if v_user is null then
     raise exception 'Authentication required';
   end if;
 
-  if nullif(btrim(p_name), '') is null then
-    raise exception 'Company name is required';
+  -- FIX 5.5.2: confirmation/sign-in can occasionally return client user metadata
+  -- later than the authenticated session. Recover the original signup fields from
+  -- auth.users on the database side so first sign-in can still provision safely.
+  select coalesce(u.raw_user_meta_data, '{}'::jsonb)
+    into v_meta
+    from auth.users u
+   where u.id = v_user;
+
+  v_name := coalesce(nullif(btrim(p_name), ''), nullif(btrim(v_meta->>'company'), ''));
+  v_country := coalesce(nullif(btrim(p_country), ''), nullif(btrim(v_meta->>'country'), ''), '');
+  v_phone := coalesce(nullif(btrim(p_phone), ''), nullif(btrim(v_meta->>'phone'), ''), '');
+
+  if v_name is null then
+    raise exception 'Company name is missing from signup metadata. Please create the account again.';
   end if;
 
   -- Idempotent: if this user already belongs to a company, return it.
@@ -45,7 +61,7 @@ begin
     feature_nfc, feature_batch, feature_qr, feature_barcode, feature_elements,
     max_users, owner_user_id
   ) values (
-    btrim(p_name), coalesce(p_country, ''), coalesce(p_phone, ''),
+    v_name, v_country, v_phone,
     'Standard · 5-Day Trial', 'active',
     coalesce(p_trial_started_at, now()),
     coalesce(p_trial_expires_at, now() + interval '5 days'),

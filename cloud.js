@@ -104,7 +104,6 @@
 
     const meta = user.user_metadata || {};
     const companyName = String(meta.company || fallback.company || '').trim();
-    if (!companyName) return null;
 
     const country = String(meta.country || fallback.country || '').trim();
     const phone = String(meta.phone || fallback.phone || '').trim();
@@ -115,7 +114,9 @@
     // database side. The RPC derives the owner from auth.uid(), so the browser
     // never needs to bypass RLS and cannot provision a company for another user.
     const { error: provisionError } = await supabase.rpc('provision_my_company', {
-      p_name: companyName,
+      // FIX 5.5.2: allow the database function to recover the company name
+      // from the authenticated user's metadata when the client metadata is late/missing.
+      p_name: companyName || null,
       p_country: country,
       p_phone: phone,
       p_trial_started_at: trialStartedAt,
