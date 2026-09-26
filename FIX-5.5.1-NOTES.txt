@@ -1,0 +1,10 @@
+TABAJA SOLUTION FIX 5.5.1
+
+Scope: company signup/provisioning only.
+
+- Keeps full_name, company, country and phone in Supabase user_metadata at signup.
+- Signup never inserts into companies/company_members.
+- Email confirmation remains required.
+- First successful sign-in provisions company + owner membership through provision_my_company RPC.
+- Existing companies, admin logic, feature flags, UI modules and RLS policies are unchanged.
+- Cache version bumped so cloud.js update is forced.

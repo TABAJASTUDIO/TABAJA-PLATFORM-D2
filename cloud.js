@@ -179,20 +179,11 @@
     if (error) throw error;
     if (!data.user) throw new Error('Account creation did not return a user.');
 
-    // With email confirmation enabled Supabase does not provide an authenticated
-    // session yet. Company + membership are created automatically on first sign-in
-    // after confirmation, when RLS has a real auth.uid().
-    if (!data.session) return { pendingConfirmation: true, email: payload.email };
-
-    const workspace = await createWorkspaceForUser(data.user, payload);
-    const account = {
-      ...(workspace || {}),
-      owner: payload.owner,
-      email: payload.email,
-      cloud: true
-    };
-    localStorage.setItem(ACCOUNT_KEY, JSON.stringify(account));
-    return account;
+    // FIX 5.5.1: signup NEVER provisions a company in the same request.
+    // Keep company/country/phone in Supabase user_metadata, require confirmation,
+    // then provision atomically on the first successful sign-in via SECURITY DEFINER RPC.
+    // This avoids any signup-session/RLS timing race and preserves existing companies.
+    return { pendingConfirmation: true, email: payload.email };
   }
 
   async function signOut() {
