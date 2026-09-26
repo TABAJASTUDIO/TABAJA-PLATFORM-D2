@@ -80,19 +80,66 @@
     };
   }
 
+  async function createWorkspaceForUser(user, fallback = {}) {
+    const supabase = getClient();
+    if (!supabase || !user?.id) return null;
+
+    const existing = await loadWorkspace(user.id);
+    if (existing) return existing;
+
+    const meta = user.user_metadata || {};
+    const companyName = String(meta.company || fallback.company || '').trim();
+    if (!companyName) return null;
+
+    const country = String(meta.country || fallback.country || '').trim();
+    const phone = String(meta.phone || fallback.phone || '').trim();
+    const trialStartedAt = new Date().toISOString();
+    const trialExpiresAt = new Date(Date.now() + 5 * 86400000).toISOString();
+
+    const { data: company, error: companyError } = await supabase
+      .from('companies')
+      .insert({
+        name: companyName,
+        country,
+        phone,
+        plan: 'Standard · 5-Day Trial',
+        status: 'active',
+        trial_started_at: trialStartedAt,
+        trial_expires_at: trialExpiresAt,
+        feature_nfc: false,
+        feature_batch: false,
+        feature_qr: false,
+        feature_barcode: false,
+        feature_elements: false,
+        max_users: 3,
+        owner_user_id: user.id
+      })
+      .select()
+      .single();
+    if (companyError) throw companyError;
+
+    const { error: memberError } = await supabase.from('company_members').insert({
+      company_id: company.id,
+      user_id: user.id,
+      role: 'owner'
+    });
+    if (memberError) throw memberError;
+
+    return await loadWorkspace(user.id);
+  }
+
   async function signIn(email, password) {
     const supabase = getClient();
     if (!supabase) throw new Error('Cloud is not configured. Open Cloud Setup first.');
     const { data, error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) throw error;
 
-    // Tabaja Cloud Admin: keep the Supabase session for RLS, but do not
-    // treat the admin as a customer company or create/load a workspace.
     if (data.user?.id === ADMIN_USER_ID) {
       return { cloudAdmin: true, userId: data.user.id, email: data.user.email, cloud: true };
     }
 
-    const workspace = await loadWorkspace(data.user.id);
+    let workspace = await loadWorkspace(data.user.id);
+    if (!workspace) workspace = await createWorkspaceForUser(data.user);
     const account = {
       ...(workspace || {}),
       owner: data.user.user_metadata?.full_name || data.user.email,
@@ -106,10 +153,12 @@
   async function signUp(payload) {
     const supabase = getClient();
     if (!supabase) throw new Error('Cloud is not configured. Open Cloud Setup first.');
+    const redirectTo = `${location.origin}${location.pathname}`;
     const { data, error } = await supabase.auth.signUp({
       email: payload.email,
       password: payload.password,
       options: {
+        emailRedirectTo: redirectTo,
         data: {
           full_name: payload.owner,
           company: payload.company,
@@ -121,49 +170,16 @@
     if (error) throw error;
     if (!data.user) throw new Error('Account creation did not return a user.');
 
-    const { data: company, error: companyError } = await supabase
-      .from('companies')
-      .insert({
-        name: payload.company,
-        country: payload.country,
-        phone: payload.phone,
-        plan: 'Standard · 5-Day Trial',
-        status: 'active',
-        trial_started_at: new Date().toISOString(),
-        trial_expires_at: new Date(Date.now() + 5 * 86400000).toISOString(),
-        feature_nfc: false,
-        feature_batch: false,
-        feature_qr: false,
-        feature_barcode: false,
-        feature_elements: false,
-        max_users: 3,
-        owner_user_id: data.user.id
-      })
-      .select()
-      .single();
-    if (companyError) throw companyError;
+    // With email confirmation enabled Supabase does not provide an authenticated
+    // session yet. Company + membership are created automatically on first sign-in
+    // after confirmation, when RLS has a real auth.uid().
+    if (!data.session) return { pendingConfirmation: true, email: payload.email };
 
-    const { error: memberError } = await supabase.from('company_members').insert({
-      company_id: company.id,
-      user_id: data.user.id,
-      role: 'owner'
-    });
-    if (memberError) throw memberError;
-
+    const workspace = await createWorkspaceForUser(data.user, payload);
     const account = {
-      company: company.name,
-      companyId: company.id,
+      ...(workspace || {}),
       owner: payload.owner,
       email: payload.email,
-      country: payload.country,
-      phone: payload.phone,
-      plan: company.plan,
-      status: company.trial_expires_at ? 'TRIAL' : 'ACTIVE',
-      trialStartedAt: company.trial_started_at || null,
-      trialExpiresAt: company.trial_expires_at || null,
-      features: { nfc: company.feature_nfc === true, batch: company.feature_batch === true, qr: company.feature_qr === true, barcode: company.feature_barcode === true, elements: company.feature_elements === true },
-      maxUsers: company.max_users,
-      role: 'owner',
       cloud: true
     };
     localStorage.setItem(ACCOUNT_KEY, JSON.stringify(account));
@@ -203,6 +219,6 @@
 
   window.TabajaCloud = {
     readConfig, saveConfig, isConfigured, getClient, getSession,
-    loadWorkspace, signIn, signUp, signOut, resetPassword, updatePassword, connectionTest, ADMIN_USER_ID
+    loadWorkspace, createWorkspaceForUser, signIn, signUp, signOut, resetPassword, updatePassword, connectionTest, ADMIN_USER_ID
   };
 })();

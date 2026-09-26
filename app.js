@@ -292,7 +292,11 @@ $("registerForm").addEventListener("submit", async e => {
   try {
     if (cloudMode()) {
       const returnToAdmin = adminCreateCompanyMode && isTabajaAdmin();
-      await window.TabajaCloud.signUp(payload);
+      const signupResult = await window.TabajaCloud.signUp(payload);
+      if (signupResult?.pendingConfirmation) {
+        $("registerError").textContent = "Confirmation email sent. Confirm your email, then sign in to start your 5-day trial.";
+        return;
+      }
       if (returnToAdmin) setActiveAccount(defaultAccount);
     } else {
       const exists = readAccounts().some(a =>
