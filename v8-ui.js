@@ -39,7 +39,7 @@
   function setView(view) {
     if (view === 'nfc' && window.TabajaAccess && !window.TabajaAccess.can('nfc')) view = 'dashboard';
     if (view === 'batch' && window.TabajaAccess && !window.TabajaAccess.can('batch')) view = 'printcenter';
-    if (view === 'elements' && window.TabajaAccess && !window.TabajaAccess.can('elements')) view = 'designer';
+    if (view === 'elements') view = 'designer';
     document.body.dataset.v8View = view;
     enforceSingleWorkspace(view);
     const elementsOnly = view === 'elements';
@@ -53,7 +53,7 @@
     // Keep production/design controls out of customer-facing module pages.
     const designerTopActions = document.getElementById('designerTopActions');
     if (designerTopActions) {
-      const showDesignerTools = designerViews.has(view);
+      const showDesignerTools = designerViews.has(view) && view !== 'batch';
       designerTopActions.style.display = showDesignerTools ? '' : 'none';
       designerTopActions.setAttribute('aria-hidden', showDesignerTools ? 'false' : 'true');
     }

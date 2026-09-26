@@ -603,7 +603,7 @@ html[data-pwa="installed"] .ts-header{top:0!important}
 /* V12.9.3.9 — hard UI cleanup guard.
    The design/export/print toolbar belongs ONLY to Identity Studio and its production subviews.
    This CSS guard works even if an older UI script is temporarily cached by the browser/PWA. */
-body:not([data-v8-view="designer"]):not([data-v8-view="batch"]):not([data-v8-view="quality"]):not([data-v8-view="zebra"]) #designerTopActions{display:none!important;visibility:hidden!important;height:0!important;min-height:0!important;margin:0!important;padding:0!important;border:0!important;overflow:hidden!important}
+body:not([data-v8-view="designer"]):not([data-v8-view="quality"]):not([data-v8-view="zebra"]) #designerTopActions{display:none!important;visibility:hidden!important;height:0!important;min-height:0!important;margin:0!important;padding:0!important;border:0!important;overflow:hidden!important}
 
 
 /* V12.9.3.10 — customer-only brand cleanup. Admin branding remains unchanged. */
