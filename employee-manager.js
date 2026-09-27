@@ -166,7 +166,7 @@
     });
   }
 
-  function saveForm(event) {
+  async function saveForm(event) {
     event.preventDefault();
     const key = $('employeeRecordKey').value;
     const employeeId = $('employeeIdInput').value.trim();
@@ -205,6 +205,19 @@
 
     try {
       saveEmployees();
+      const account = JSON.parse(
+  localStorage.getItem('tabaja_card_designer_account_v10') || 'null'
+);
+
+const companyId = account?.companyId || account?.id;
+
+if (
+  account?.cloud &&
+  companyId &&
+  window.TabajaCloud?.saveEmployeeToCloud
+) {
+  await window.TabajaCloud.saveEmployeeToCloud(companyId, record);
+}
       renderEmployees();
       closeModal();
     } catch (error) {
