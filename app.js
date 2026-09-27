@@ -416,7 +416,11 @@ $("logoutBtn").onclick = async () => {
 
   localStorage.removeItem(LOGIN_KEY);
   sessionStorage.removeItem(LOGIN_KEY);
+
+  // Clear the previous company's active session state.
   localStorage.removeItem(ACTIVE_ACCOUNT_KEY);
+  localStorage.removeItem(ACCOUNT_KEY);
+
   try { window.TabajaResetCommandCenter?.(); } catch (_) {}
 
   showLogin();
