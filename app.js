@@ -1667,12 +1667,20 @@ $("saveTemplateBtn").addEventListener("click", async () => {
     const companyId = account?.companyId || account?.id;
 
     if (account?.cloud && companyId && window.TabajaCloud?.saveTemplateToCloud) {
-      await window.TabajaCloud.saveTemplateToCloud(
-        companyId,
-        "Identity Card",
-        templateSnapshot
-      );
-      builderStatus("Template saved locally and to cloud.");
+  const templateName = prompt("Enter a name for this template:");
+
+  if (!templateName || !templateName.trim()) {
+    builderStatus("Template saved on this device.");
+    return;
+  }
+
+  await window.TabajaCloud.saveTemplateToCloud(
+    companyId,
+    templateName.trim(),
+    templateSnapshot
+  );
+
+  builderStatus("Template saved locally and to cloud.");
     } else {
       builderStatus("Template saved on this device.");
     }
