@@ -1659,7 +1659,31 @@ $("saveTemplateBtn").addEventListener("click", async () => {
   ensurePoweredBy();
   saveCurrentSide();
 
-  const templateSnapshot = snapshot();
+  const templateData = JSON.parse(snapshot());
+
+templateData.objects = (templateData.objects || []).map((object) => {
+  const role = object.role || "";
+
+  if (role === "employeeName") {
+    return { ...object, text: "EMPLOYEE NAME" };
+  }
+
+  if (role === "employeeJob") {
+    return { ...object, text: "Job Title" };
+  }
+
+  if (role === "employeePhoto") {
+    return null;
+  }
+
+  if (role.startsWith("contactIcon") || role.startsWith("contactValue")) {
+    return null;
+  }
+
+  return object;
+}).filter(Boolean);
+
+const templateSnapshot = JSON.stringify(templateData);
   localStorage.setItem(tenantKey(V61_TEMPLATE_KEY), templateSnapshot);
 
   try {
