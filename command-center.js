@@ -168,7 +168,7 @@ const readArray = (key) => {
     console.error('Command Center cloud templates failed:', error);
   }
 }
-  }
+  
 
   document.addEventListener('DOMContentLoaded', () => {
     render();
