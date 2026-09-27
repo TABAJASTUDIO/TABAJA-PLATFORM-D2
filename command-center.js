@@ -122,29 +122,52 @@ const readArray = (key) => {
     renderLastBatch([]);
   }
 
-  function render() {
-    const employees = readArray('tabaja-employees-v11');
-    const jobs = readArray('tabaja-print-jobs');
-    const cards = readArray('tabaja-recent-cards');
-    const templates = readArray('tabaja-templates');
-    const today = localDateKey();
-    const todayJobs = jobs.filter((job) => recordDate(job) === today);
-    const todayCards = todayJobs.reduce((sum, job) => sum + Number(job.cards || job.count || 0), 0);
+  async function render() {
+  const employees = readArray('tabaja-employees-v11');
+  const jobs = readArray('tabaja-print-jobs');
+  const cards = readArray('tabaja-recent-cards');
+  const localTemplates = readArray('tabaja-templates');
+  const today = localDateKey();
+  const todayJobs = jobs.filter((job) => recordDate(job) === today);
+  const todayCards = todayJobs.reduce((sum, job) => sum + Number(job.cards || job.count || 0), 0);
 
-    setText('ccEmployeeCount', employees.length);
-    setText('ccActivityEmployees', `${employees.length} records available.`);
-    setText('ccTodayJobs', todayJobs.length);
-    setText('ccTodayCards', todayCards);
-    setText('ccTemplateCount', templates.length);
-    setText('ccQueueCount', `${jobs.filter((job) => job.status === 'queued').length} waiting`);
-    setText('reportCardsToday', todayCards);
-    setText('reportEmployees', employees.length);
-    setText('reportJobs', jobs.length);
-    setText('reportTemplates', templates.length);
+  setText('ccEmployeeCount', employees.length);
+  setText('ccActivityEmployees', `${employees.length} records available.`);
+  setText('ccTodayJobs', todayJobs.length);
+  setText('ccTodayCards', todayCards);
+  setText('ccTemplateCount', localTemplates.length);
+  setText('ccQueueCount', `${jobs.filter((job) => job.status === 'queued').length} waiting`);
+  setText('reportCardsToday', todayCards);
+  setText('reportEmployees', employees.length);
+  setText('reportJobs', jobs.length);
+  setText('reportTemplates', localTemplates.length);
 
-    renderRecentCards(cards);
-    renderLastBatch(jobs);
-    updateClock();
+  renderRecentCards(cards);
+  renderLastBatch(jobs);
+  updateClock();
+
+  try {
+    const account = JSON.parse(
+      localStorage.getItem('tabaja_card_designer_account_v10') || 'null'
+    );
+
+    const companyId = account?.companyId || account?.id;
+
+    if (
+      account?.cloud &&
+      companyId &&
+      window.TabajaCloud?.listTemplatesFromCloud
+    ) {
+      const cloudTemplates =
+        await window.TabajaCloud.listTemplatesFromCloud(companyId);
+
+      setText('ccTemplateCount', cloudTemplates.length);
+      setText('reportTemplates', cloudTemplates.length);
+    }
+  } catch (error) {
+    console.error('Command Center cloud templates failed:', error);
+  }
+}
   }
 
   document.addEventListener('DOMContentLoaded', () => {
