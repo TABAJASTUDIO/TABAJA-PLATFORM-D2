@@ -358,8 +358,23 @@ function showPasswordRecovery() {
   if ($("recoveryMessage")) $("recoveryMessage").textContent = "Recovery link verified.";
 }
 
-window.TabajaCloud?.getClient()?.auth.onAuthStateChange((event) => {
-  if (event === "PASSWORD_RECOVERY") showPasswordRecovery();
+window.TabajaCloud?.getClient()?.auth.onAuthStateChange(async (event, session) => {
+  if (event === "PASSWORD_RECOVERY") {
+    showPasswordRecovery();
+    return;
+  }
+
+  if (event === "SIGNED_IN" && session?.user?.id) {
+    try {
+      const existingWorkspace = await window.TabajaCloud.loadWorkspace(session.user.id);
+
+      if (!existingWorkspace) {
+        await window.TabajaCloud.createWorkspaceForUser(session.user);
+      }
+    } catch (error) {
+      console.error("Confirmed account provisioning failed:", error);
+    }
+  }
 });
 
 $("recoveryForm")?.addEventListener("submit", async e => {
