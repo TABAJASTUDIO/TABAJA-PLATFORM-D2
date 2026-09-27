@@ -498,8 +498,9 @@ async function loadTemplateFromCloud(companyId, name = 'Identity Card') {
   if (error) throw error;
 
   return (data || []).map((row) => ({
-    id: row.id,
-    employeeId: row.employee_code || '',
+  id: row.id,
+  key: row.id,
+  employeeId: row.employee_code || '',
     firstName: row.first_name || '',
     lastName: row.last_name || '',
     department: row.department || '',
