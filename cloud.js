@@ -413,27 +413,55 @@ async function loadTemplateFromCloud(companyId, name = 'Identity Card') {
     throw new Error('Company ID is required.');
   }
 
-  const { error } = await supabase
-    .from('employees')
-    .upsert({
-      company_id: companyId,
-      employee_code: employee.employeeId || '',
-      full_name: [employee.firstName, employee.lastName].filter(Boolean).join(' ').trim(),
-      first_name: employee.firstName || '',
-      last_name: employee.lastName || '',
-      department: employee.department || '',
-      job_title: employee.jobTitle || '',
-      company_name: employee.company || '',
-      email: employee.email || '',
-      phone: employee.phone || '',
-      photo_url: '',
-      photo_data: employee.photo || '',
-      status: (employee.status || 'Active').toLowerCase()
-    }, {
-      onConflict: 'company_id,employee_code'
-    });
+  const employeeCode = String(employee.employeeId || '').trim();
 
-  if (error) throw error;
+  const employeeData = {
+    company_id: companyId,
+    employee_code: employeeCode,
+    full_name: [employee.firstName, employee.lastName]
+      .filter(Boolean)
+      .join(' ')
+      .trim(),
+    first_name: employee.firstName || '',
+    last_name: employee.lastName || '',
+    department: employee.department || '',
+    job_title: employee.jobTitle || '',
+    company_name: employee.company || '',
+    email: employee.email || '',
+    phone: employee.phone || '',
+    photo_url: '',
+    photo_data: employee.photo || '',
+    status: (employee.status || 'Active').toLowerCase()
+  };
+
+  // Look for this employee inside THIS company only.
+  const { data: existing, error: lookupError } = await supabase
+    .from('employees')
+    .select('id')
+    .eq('company_id', companyId)
+    .eq('employee_code', employeeCode)
+    .limit(1)
+    .maybeSingle();
+
+  if (lookupError) throw lookupError;
+
+  if (existing?.id) {
+    // Existing employee: update only the matching row in this company.
+    const { error } = await supabase
+      .from('employees')
+      .update(employeeData)
+      .eq('id', existing.id)
+      .eq('company_id', companyId);
+
+    if (error) throw error;
+  } else {
+    // New employee: insert a new row.
+    const { error } = await supabase
+      .from('employees')
+      .insert(employeeData);
+
+    if (error) throw error;
+  }
 
   return true;
 }
