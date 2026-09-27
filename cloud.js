@@ -401,6 +401,42 @@ async function loadTemplateFromCloud(companyId, name = 'Identity Card') {
 
   return Array.isArray(data) ? data : [];
 }
+
+  async function saveEmployeeToCloud(companyId, employee) {
+  const supabase = getClient();
+
+  if (!supabase) {
+    throw new Error('Cloud is not configured.');
+  }
+
+  if (!companyId) {
+    throw new Error('Company ID is required.');
+  }
+
+  const { error } = await supabase
+    .from('employees')
+    .upsert({
+      company_id: companyId,
+      employee_code: employee.employeeId || '',
+      full_name: [employee.firstName, employee.lastName].filter(Boolean).join(' ').trim(),
+      first_name: employee.firstName || '',
+      last_name: employee.lastName || '',
+      department: employee.department || '',
+      job_title: employee.jobTitle || '',
+      company_name: employee.company || '',
+      email: employee.email || '',
+      phone: employee.phone || '',
+      photo_url: '',
+      photo_data: employee.photo || '',
+      status: (employee.status || 'Active').toLowerCase()
+    }, {
+      onConflict: 'company_id,employee_code'
+    });
+
+  if (error) throw error;
+
+  return true;
+}
   window.TabajaCloud = {
     readConfig,
     saveConfig,
@@ -415,6 +451,7 @@ async function loadTemplateFromCloud(companyId, name = 'Identity Card') {
     resetPassword,
     updatePassword,
     connectionTest,
+    saveEmployeeToCloud,
 saveTemplateToCloud,
 loadTemplateFromCloud,
 listTemplatesFromCloud,
