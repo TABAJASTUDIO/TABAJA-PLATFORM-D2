@@ -280,10 +280,36 @@ if (
     }
   }
 
-  function init() {
-    if (!$('employeeWorkspace')) return;
+  async function init() {
+  if (!$('employeeWorkspace')) return;
+
+  const account = JSON.parse(
+    localStorage.getItem('tabaja_card_designer_account_v10') || 'null'
+  );
+
+  const companyId = account?.companyId || account?.id;
+
+  if (
+    account?.cloud &&
+    companyId &&
+    window.TabajaCloud?.loadEmployeesFromCloud
+  ) {
+    try {
+      employees = await window.TabajaCloud.loadEmployeesFromCloud(companyId);
+
+      // Keep a local cache for this company, but Cloud is the source of truth.
+      saveEmployees();
+    } catch (error) {
+      console.error('Unable to load cloud employees:', error);
+
+      // If Cloud is temporarily unavailable, fall back to this company's cache.
+      loadEmployees();
+    }
+  } else {
     loadEmployees();
-    renderEmployees();
+  }
+
+  renderEmployees();
     $('addEmployeeBtn').addEventListener('click', () => openModal());
     $('emptyAddEmployeeBtn').addEventListener('click', () => openModal());
     $('closeEmployeeModalBtn').addEventListener('click', closeModal);
