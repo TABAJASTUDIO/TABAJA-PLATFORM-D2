@@ -465,6 +465,56 @@ async function loadTemplateFromCloud(companyId, name = 'Identity Card') {
 
   return true;
 }
+  async function loadEmployeesFromCloud(companyId) {
+  const supabase = getClient();
+
+  if (!supabase) {
+    throw new Error('Cloud is not configured.');
+  }
+
+  if (!companyId) {
+    throw new Error('Company ID is required.');
+  }
+
+  const { data, error } = await supabase
+    .from('employees')
+    .select(`
+      id,
+      employee_code,
+      first_name,
+      last_name,
+      department,
+      job_title,
+      company_name,
+      email,
+      phone,
+      photo_data,
+      status,
+      created_at
+    `)
+    .eq('company_id', companyId)
+    .order('created_at', { ascending: true });
+
+  if (error) throw error;
+
+  return (data || []).map((row) => ({
+    id: row.id,
+    employeeId: row.employee_code || '',
+    firstName: row.first_name || '',
+    lastName: row.last_name || '',
+    department: row.department || '',
+    jobTitle: row.job_title || '',
+    company: row.company_name || '',
+    email: row.email || '',
+    phone: row.phone || '',
+    photo: row.photo_data || '',
+    status:
+      String(row.status || 'active').toLowerCase() === 'inactive'
+        ? 'Inactive'
+        : 'Active',
+    createdAt: row.created_at || ''
+  }));
+}
   window.TabajaCloud = {
     readConfig,
     saveConfig,
@@ -480,6 +530,7 @@ async function loadTemplateFromCloud(companyId, name = 'Identity Card') {
     updatePassword,
     connectionTest,
     saveEmployeeToCloud,
+    loadEmployeesFromCloud,
 saveTemplateToCloud,
 loadTemplateFromCloud,
 listTemplatesFromCloud,
