@@ -240,11 +240,37 @@ if (
     if (!employee) return;
     if (button.dataset.action === 'edit') openModal(employee);
     if (button.dataset.action === 'designer') useInDesigner(employee);
-    if (button.dataset.action === 'delete' && confirm(`Delete ${fullName(employee)}? This cannot be undone.`)) {
-      employees = employees.filter((item) => item.key !== employee.key);
-      saveEmployees();
-      renderEmployees();
-    }
+    if (button.dataset.action === 'delete' && confirm(`Delete ${fullName(employee)}?`)) {
+  const account = JSON.parse(
+    localStorage.getItem('tabaja_card_designer_account_v10') || 'null'
+  );
+
+  const companyId = account?.companyId || account?.id;
+
+  if (
+    account?.cloud &&
+    companyId &&
+    employee.id &&
+    window.TabajaCloud?.archiveEmployeeInCloud
+  ) {
+    window.TabajaCloud.archiveEmployeeInCloud(companyId, employee.id)
+      .then(() => {
+        employees = employees.filter((item) => item.key !== employee.key);
+        saveEmployees();
+        renderEmployees();
+      })
+      .catch((error) => {
+        console.error('Unable to archive employee:', error);
+        alert('Unable to delete employee. Please try again.');
+      });
+
+    return;
+  }
+
+  employees = employees.filter((item) => item.key !== employee.key);
+  saveEmployees();
+  renderEmployees();
+}
   }
 
   function exportBackup() {
