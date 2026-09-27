@@ -553,7 +553,7 @@ async function loadTemplateFromCloud(companyId, name = 'Identity Card') {
     updatePassword,
     connectionTest,
     saveEmployeeToCloud,
-    Add employee cloud archive
+    archiveEmployeeInCloud,
     loadEmployeesFromCloud,
 saveTemplateToCloud,
 loadTemplateFromCloud,
