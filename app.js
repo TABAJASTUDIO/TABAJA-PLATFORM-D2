@@ -366,10 +366,19 @@ window.TabajaCloud?.getClient()?.auth.onAuthStateChange(async (event, session) =
 
   if (event === "SIGNED_IN" && session?.user?.id) {
     try {
-      const existingWorkspace = await window.TabajaCloud.loadWorkspace(session.user.id);
+      let workspace = await window.TabajaCloud.loadWorkspace(session.user.id);
 
-      if (!existingWorkspace) {
-        await window.TabajaCloud.createWorkspaceForUser(session.user);
+      if (!workspace) {
+        workspace = await window.TabajaCloud.createWorkspaceForUser(session.user);
+      }
+
+      if (workspace) {
+        setActiveAccount({
+          ...workspace,
+          owner: session.user.user_metadata?.full_name || session.user.email,
+          email: session.user.email,
+          cloud: true
+        });
       }
     } catch (error) {
       console.error("Confirmed account provisioning failed:", error);
