@@ -1227,11 +1227,39 @@ async function generateEmployeeCard() {
 $("generateEmployeeBtn").addEventListener("click", generateEmployeeCard);
 $("replacePhotoBtn").addEventListener("click", () => $("builderPhoto").click());
 
-$("saveTemplateBtn").addEventListener("click", () => {
+$("saveTemplateBtn").addEventListener("click", async () => {
   ensurePoweredBy();
   saveCurrentSide();
-  localStorage.setItem(V61_TEMPLATE_KEY, snapshot());
-  builderStatus("Template saved on this device.");
+
+  const templateSnapshot = snapshot();
+  localStorage.setItem(V61_TEMPLATE_KEY, templateSnapshot);
+
+  try {
+    const account = readAccount();
+    const companyId = account?.companyId || account?.id;
+
+    if (account?.cloud && companyId && window.TabajaCloud?.saveTemplateToCloud) {
+      const templateName = prompt("Enter a name for this template:");
+
+      if (!templateName || !templateName.trim()) {
+        builderStatus("Template saved on this device.");
+        return;
+      }
+
+      await window.TabajaCloud.saveTemplateToCloud(
+        companyId,
+        templateName.trim(),
+        templateSnapshot
+      );
+
+      builderStatus("Template saved locally and to cloud.");
+    } else {
+      builderStatus("Template saved on this device.");
+    }
+  } catch (error) {
+    console.error("Cloud template save failed:", error);
+    builderStatus("Template saved on this device. Cloud backup failed.");
+  }
 });
 
 $("loadTemplateBtn").addEventListener("click", async () => {
