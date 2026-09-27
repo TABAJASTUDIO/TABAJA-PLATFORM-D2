@@ -1688,12 +1688,41 @@ $("loadTemplateBtn").addEventListener("click", async () => {
 
   let saved = null;
 
-  if (account?.cloud && companyId && window.TabajaCloud?.loadTemplateFromCloud) {
+  if (account?.cloud && companyId && window.TabajaCloud?.listTemplatesFromCloud) {
     try {
-      saved = await window.TabajaCloud.loadTemplateFromCloud(
-        companyId,
-        "Identity Card"
-      );
+      const templates = await window.TabajaCloud.listTemplatesFromCloud(companyId);
+
+if (templates.length === 0) {
+  return alert("No saved template found.");
+}
+
+let selectedTemplate = templates[0];
+
+if (templates.length > 1) {
+  const menu = templates
+    .map((template, index) => `${index + 1}. ${template.name}`)
+    .join("\n");
+
+  const choice = prompt(
+    `Choose a template:\n\n${menu}\n\nEnter template number:`,
+    "1"
+  );
+
+  if (choice === null) return;
+
+  const index = Number(choice) - 1;
+
+  if (!Number.isInteger(index) || !templates[index]) {
+    return alert("Invalid template number.");
+  }
+
+  selectedTemplate = templates[index];
+}
+
+saved = await window.TabajaCloud.loadTemplateFromCloud(
+  companyId,
+  selectedTemplate.name
+);
     } catch (error) {
       console.error("Cloud template load failed:", error);
     }
