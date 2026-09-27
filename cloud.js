@@ -322,7 +322,84 @@
 
     return true;
   }
+async function saveTemplateToCloud(companyId, name, snapshotJson) {
+  const supabase = getClient();
 
+  if (!supabase) {
+    throw new Error('Cloud is not configured.');
+  }
+
+  if (!companyId) {
+    throw new Error('Company ID is required.');
+  }
+
+  const templateData =
+    typeof snapshotJson === 'string'
+      ? JSON.parse(snapshotJson)
+      : snapshotJson;
+
+  const { data: existing, error: findError } = await supabase
+    .from('templates')
+    .select('id')
+    .eq('company_id', companyId)
+    .eq('name', name || 'Identity Card')
+    .limit(1)
+    .maybeSingle();
+
+  if (findError) throw findError;
+
+  if (existing?.id) {
+    const { error } = await supabase
+      .from('templates')
+      .update({
+        template_data: templateData,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', existing.id);
+
+    if (error) throw error;
+    return existing.id;
+  }
+
+  const { data, error } = await supabase
+    .from('templates')
+    .insert({
+      company_id: companyId,
+      name: name || 'Identity Card',
+      template_data: templateData
+    })
+    .select('id')
+    .single();
+
+  if (error) throw error;
+
+  return data.id;
+}
+
+async function loadTemplateFromCloud(companyId, name = 'Identity Card') {
+  const supabase = getClient();
+
+  if (!supabase) {
+    throw new Error('Cloud is not configured.');
+  }
+
+  if (!companyId) {
+    throw new Error('Company ID is required.');
+  }
+
+  const { data, error } = await supabase
+    .from('templates')
+    .select('template_data')
+    .eq('company_id', companyId)
+    .eq('name', name)
+    .limit(1)
+    .maybeSingle();
+
+  if (error) throw error;
+  if (!data?.template_data) return null;
+
+  return JSON.stringify(data.template_data);
+}
   window.TabajaCloud = {
     readConfig,
     saveConfig,
