@@ -414,6 +414,8 @@ async function loadTemplateFromCloud(companyId, name = 'Identity Card') {
     resetPassword,
     updatePassword,
     connectionTest,
-    ADMIN_USER_ID
+saveTemplateToCloud,
+loadTemplateFromCloud,
+ADMIN_USER_ID
   };
 })();
