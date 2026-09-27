@@ -61,21 +61,35 @@
       .eq('user_id', userId)
       .limit(1)
       .maybeSingle();
+
     if (error) throw error;
+
     const company = data?.companies;
     if (!company) return null;
+
     return {
       company: company.name,
       companyId: company.id,
       country: company.country || '',
       phone: company.phone || '',
       plan: company.plan || 'Professional',
-      status: String(company.status || 'active').toLowerCase() === 'suspended' ? 'SUSPENDED' : String(company.status || 'active').toLowerCase() === 'expired' ? 'EXPIRED' : (company.trial_expires_at ? 'TRIAL' : 'ACTIVE'),
+      status:
+        String(company.status || 'active').toLowerCase() === 'suspended'
+          ? 'SUSPENDED'
+          : String(company.status || 'active').toLowerCase() === 'expired'
+            ? 'EXPIRED'
+            : (company.trial_expires_at ? 'TRIAL' : 'ACTIVE'),
       licenceExpiresAt: company.licence_expires_at || null,
       maxUsers: company.max_users || 1,
       trialStartedAt: company.trial_started_at || null,
       trialExpiresAt: company.trial_expires_at || company.licence_expires_at || null,
-      features: { nfc: company.feature_nfc === true, batch: company.feature_batch === true, qr: company.feature_qr === true, barcode: company.feature_barcode === true, elements: company.feature_elements === true },
+      features: {
+        nfc: company.feature_nfc === true,
+        batch: company.feature_batch === true,
+        qr: company.feature_qr === true,
+        barcode: company.feature_barcode === true,
+        elements: company.feature_elements === true
+      },
       role: data.role || 'owner'
     };
   }
@@ -84,104 +98,142 @@
     const supabase = getClient();
     if (!supabase || !user?.id) return null;
 
-    // FIX 5.4: never write company rows until the Supabase client has a real
-    // authenticated session. RLS checks auth.uid() from the request JWT.
+    // FIX 5.4: make sure the authenticated session is ready.
     const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
     if (sessionError) throw sessionError;
+
     const sessionUser = sessionData?.session?.user;
-    if (!sessionUser?.id) throw new Error('Authenticated session is not ready. Please sign in again.');
+    if (!sessionUser?.id) {
+      throw new Error('Authenticated session is not ready. Please sign in again.');
+    }
 
     const { data: verifiedData, error: verifiedError } = await supabase.auth.getUser();
     if (verifiedError) throw verifiedError;
+
     const authenticatedUser = verifiedData?.user;
+
     if (!authenticatedUser?.id || authenticatedUser.id !== sessionUser.id) {
       throw new Error('Authenticated user could not be verified. Please sign in again.');
     }
 
     user = authenticatedUser;
+
+    // Never create another workspace if this user already has one.
     const existing = await loadWorkspace(user.id);
     if (existing) return existing;
 
     const meta = user.user_metadata || {};
-    const companyName = String(meta.company || fallback.company || '').trim();
 
-    const country = String(meta.country || fallback.country || '').trim();
-    const phone = String(meta.phone || fallback.phone || '').trim();
+    const companyName = String(
+      meta.company || fallback.company || ''
+    ).trim();
+
+    const country = String(
+      meta.country || fallback.country || ''
+    ).trim();
+
+    const phone = String(
+      meta.phone || fallback.phone || ''
+    ).trim();
+
     const trialStartedAt = new Date().toISOString();
-    const trialExpiresAt = new Date(Date.now() + 5 * 86400000).toISOString();
+    const trialExpiresAt = new Date(
+      Date.now() + 5 * 86400000
+    ).toISOString();
 
-    // FIX 5.6: restore the proven FIX 5.1 company + owner creation flow,
-    // but run it only AFTER email confirmation and a successful authenticated sign-in.
-    // Existing RLS remains enabled; owner_user_id/user_id are the authenticated user.
-    const { data: company, error: companyError } = await supabase
-      .from('companies')
-      .insert({
-        name: companyName,
-        country,
-        phone,
-        plan: 'Standard · 5-Day Trial',
-        status: 'active',
-        trial_started_at: trialStartedAt,
-        trial_expires_at: trialExpiresAt,
-        feature_nfc: false,
-        feature_batch: false,
-        feature_qr: false,
-        feature_barcode: false,
-        feature_elements: false,
-        max_users: 3,
-        owner_user_id: user.id
-      })
-      .select()
-      .single();
-    if (companyError) throw companyError;
+    // FIX 5.6.2:
+    // Provision the company + initial owner membership through the
+    // SECURITY DEFINER RPC instead of a direct INSERT into companies.
+    // RLS remains enabled.
+    if (!companyName) {
+      throw new Error('Company name is missing from the confirmed account.');
+    }
 
-    const { error: memberError } = await supabase.from('company_members').insert({
-      company_id: company.id,
-      user_id: user.id,
-      role: 'owner'
-    });
-    if (memberError) throw memberError;
+    const { error: provisionError } = await supabase.rpc(
+      'provision_my_company',
+      {
+        p_name: companyName,
+        p_country: country,
+        p_phone: phone,
+        p_trial_started_at: trialStartedAt,
+        p_trial_expires_at: trialExpiresAt
+      }
+    );
 
+    if (provisionError) throw provisionError;
+
+    // Reload the workspace created by the RPC.
     const workspace = await loadWorkspace(user.id);
-    if (!workspace) throw new Error('Company workspace provisioning did not complete. Please sign in again.');
+
+    if (!workspace) {
+      throw new Error(
+        'Company workspace provisioning did not complete. Please sign in again.'
+      );
+    }
+
     return workspace;
   }
 
   async function signIn(email, password) {
     const supabase = getClient();
-    if (!supabase) throw new Error('Cloud is not configured. Open Cloud Setup first.');
-    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+
+    if (!supabase) {
+      throw new Error('Cloud is not configured. Open Cloud Setup first.');
+    }
+
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email,
+      password
+    });
+
     if (error) throw error;
 
-    // FIX 5.4: explicitly bind the returned session before any RLS-protected insert.
+    // Bind the authenticated session before provisioning.
     if (data.session?.access_token && data.session?.refresh_token) {
       const { error: setSessionError } = await supabase.auth.setSession({
         access_token: data.session.access_token,
         refresh_token: data.session.refresh_token
       });
+
       if (setSessionError) throw setSessionError;
     }
 
     if (data.user?.id === ADMIN_USER_ID) {
-      return { cloudAdmin: true, userId: data.user.id, email: data.user.email, cloud: true };
+      return {
+        cloudAdmin: true,
+        userId: data.user.id,
+        email: data.user.email,
+        cloud: true
+      };
     }
 
     let workspace = await loadWorkspace(data.user.id);
-    if (!workspace) workspace = await createWorkspaceForUser(data.user);
+
+    if (!workspace) {
+      workspace = await createWorkspaceForUser(data.user);
+    }
+
     const account = {
       ...(workspace || {}),
       owner: data.user.user_metadata?.full_name || data.user.email,
       email: data.user.email,
       cloud: true
     };
+
     localStorage.setItem(ACCOUNT_KEY, JSON.stringify(account));
+
     return account;
   }
 
   async function signUp(payload) {
     const supabase = getClient();
-    if (!supabase) throw new Error('Cloud is not configured. Open Cloud Setup first.');
+
+    if (!supabase) {
+      throw new Error('Cloud is not configured. Open Cloud Setup first.');
+    }
+
     const redirectTo = `${location.origin}${location.pathname}`;
+
     const { data, error } = await supabase.auth.signUp({
       email: payload.email,
       password: payload.password,
@@ -195,14 +247,20 @@
         }
       }
     });
-    if (error) throw error;
-    if (!data.user) throw new Error('Account creation did not return a user.');
 
-    // FIX 5.5.1: signup NEVER provisions a company in the same request.
-    // Keep company/country/phone in Supabase user_metadata, require confirmation,
-    // then provision atomically on the first successful sign-in via SECURITY DEFINER RPC.
-    // This avoids any signup-session/RLS timing race and preserves existing companies.
-    return { pendingConfirmation: true, email: payload.email };
+    if (error) throw error;
+
+    if (!data.user) {
+      throw new Error('Account creation did not return a user.');
+    }
+
+    // Signup only creates the Auth account.
+    // Company provisioning happens after email confirmation,
+    // on the first successful authenticated sign-in.
+    return {
+      pendingConfirmation: true,
+      email: payload.email
+    };
   }
 
   async function signOut() {
@@ -212,32 +270,73 @@
 
   async function updatePassword(password) {
     const supabase = getClient();
-    if (!supabase) throw new Error('Cloud is not configured.');
-    if (String(password || '').length < 8) throw new Error('Password must be at least 8 characters.');
-    const { data, error } = await supabase.auth.updateUser({ password });
+
+    if (!supabase) {
+      throw new Error('Cloud is not configured.');
+    }
+
+    if (String(password || '').length < 8) {
+      throw new Error('Password must be at least 8 characters.');
+    }
+
+    const { data, error } = await supabase.auth.updateUser({
+      password
+    });
+
     if (error) throw error;
+
     return data.user || null;
   }
 
   async function resetPassword(email) {
     const supabase = getClient();
-    if (!supabase) throw new Error('Cloud is not configured.');
+
+    if (!supabase) {
+      throw new Error('Cloud is not configured.');
+    }
+
     const redirectTo = `${location.origin}${location.pathname}`;
-    const { error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo });
+
+    const { error } = await supabase.auth.resetPasswordForEmail(
+      email,
+      { redirectTo }
+    );
+
     if (error) throw error;
   }
 
   async function connectionTest(config) {
     saveConfig(config);
+
     const supabase = getClient();
-    if (!supabase) throw new Error('The Supabase URL or anon key format is invalid.');
+
+    if (!supabase) {
+      throw new Error(
+        'The Supabase URL or anon key format is invalid.'
+      );
+    }
+
     const { error } = await supabase.auth.getSession();
+
     if (error) throw error;
+
     return true;
   }
 
   window.TabajaCloud = {
-    readConfig, saveConfig, isConfigured, getClient, getSession,
-    loadWorkspace, createWorkspaceForUser, signIn, signUp, signOut, resetPassword, updatePassword, connectionTest, ADMIN_USER_ID
+    readConfig,
+    saveConfig,
+    isConfigured,
+    getClient,
+    getSession,
+    loadWorkspace,
+    createWorkspaceForUser,
+    signIn,
+    signUp,
+    signOut,
+    resetPassword,
+    updatePassword,
+    connectionTest,
+    ADMIN_USER_ID
   };
 })();
