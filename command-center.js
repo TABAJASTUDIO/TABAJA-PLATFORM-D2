@@ -135,12 +135,12 @@ const readArray = (key) => {
   setText('ccActivityEmployees', `${employees.length} records available.`);
   setText('ccTodayJobs', todayJobs.length);
   setText('ccTodayCards', todayCards);
-  setText('ccTemplateCount', localTemplates.length);
+  // Cloud template count is loaded below.
   setText('ccQueueCount', `${jobs.filter((job) => job.status === 'queued').length} waiting`);
   setText('reportCardsToday', todayCards);
   setText('reportEmployees', employees.length);
   setText('reportJobs', jobs.length);
-  setText('reportTemplates', localTemplates.length);
+  // Cloud template report count is loaded below.
 
   renderRecentCards(cards);
   renderLastBatch(jobs);
