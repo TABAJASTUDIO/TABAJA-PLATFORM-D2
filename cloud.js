@@ -338,28 +338,7 @@ async function saveTemplateToCloud(companyId, name, snapshotJson) {
       ? JSON.parse(snapshotJson)
       : snapshotJson;
 
-  const { data: existing, error: findError } = await supabase
-    .from('templates')
-    .select('id')
-    .eq('company_id', companyId)
-    .eq('name', name || 'Identity Card')
-    .limit(1)
-    .maybeSingle();
-
-  if (findError) throw findError;
-
-  if (existing?.id) {
-    const { error } = await supabase
-      .from('templates')
-      .update({
-        template_data: templateData,
-        updated_at: new Date().toISOString()
-      })
-      .eq('id', existing.id);
-
-    if (error) throw error;
-    return existing.id;
-  }
+  
 
   const { data, error } = await supabase
     .from('templates')
