@@ -334,6 +334,36 @@ if (
     $('importEmployeesFile').addEventListener('change', (event) => { if (event.target.files[0]) importBackup(event.target.files[0]); });
     document.addEventListener('keydown', (event) => { if (event.key === 'Escape' && !$('employeeModal').classList.contains('hidden')) closeModal(); });
   }
+window.addEventListener('tabaja:account-changed', async () => {
+  if (!$('employeeWorkspace')) return;
 
+  // Clear the previous company's employees immediately.
+  employees = [];
+  renderEmployees();
+
+  const account = JSON.parse(
+    localStorage.getItem('tabaja_card_designer_account_v10') || 'null'
+  );
+
+  const companyId = account?.companyId || account?.id;
+
+  if (
+    account?.cloud &&
+    companyId &&
+    window.TabajaCloud?.loadEmployeesFromCloud
+  ) {
+    try {
+      employees = await window.TabajaCloud.loadEmployeesFromCloud(companyId);
+      saveEmployees();
+    } catch (error) {
+      console.error('Unable to reload employees after account change:', error);
+      loadEmployees();
+    }
+  } else {
+    loadEmployees();
+  }
+
+  renderEmployees();
+});
   window.addEventListener('DOMContentLoaded', init);
 })();
