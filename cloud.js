@@ -400,6 +400,28 @@ async function loadTemplateFromCloud(companyId, name = 'Identity Card') {
 
   return JSON.stringify(data.template_data);
 }
+
+  async function listTemplatesFromCloud(companyId) {
+  const supabase = getClient();
+
+  if (!supabase) {
+    throw new Error('Cloud is not configured.');
+  }
+
+  if (!companyId) {
+    throw new Error('Company ID is required.');
+  }
+
+  const { data, error } = await supabase
+    .from('templates')
+    .select('id, name, created_at, updated_at')
+    .eq('company_id', companyId)
+    .order('updated_at', { ascending: false });
+
+  if (error) throw error;
+
+  return Array.isArray(data) ? data : [];
+}
   window.TabajaCloud = {
     readConfig,
     saveConfig,
@@ -416,6 +438,7 @@ async function loadTemplateFromCloud(companyId, name = 'Identity Card') {
     connectionTest,
 saveTemplateToCloud,
 loadTemplateFromCloud,
+listTemplatesFromCloud,
 ADMIN_USER_ID
   };
 })();
