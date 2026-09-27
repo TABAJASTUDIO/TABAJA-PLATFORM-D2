@@ -465,6 +465,27 @@ async function loadTemplateFromCloud(companyId, name = 'Identity Card') {
 
   return true;
 }
+  async function archiveEmployeeInCloud(companyId, employeeId) {
+  const supabase = getClient();
+
+  if (!supabase) {
+    throw new Error('Cloud is not configured.');
+  }
+
+  if (!companyId || !employeeId) {
+    throw new Error('Company ID and Employee ID are required.');
+  }
+
+  const { error } = await supabase
+    .from('employees')
+    .update({ is_deleted: true })
+    .eq('id', employeeId)
+    .eq('company_id', companyId);
+
+  if (error) throw error;
+
+  return true;
+}
   async function loadEmployeesFromCloud(companyId) {
   const supabase = getClient();
 
@@ -532,6 +553,7 @@ async function loadTemplateFromCloud(companyId, name = 'Identity Card') {
     updatePassword,
     connectionTest,
     saveEmployeeToCloud,
+    Add employee cloud archive
     loadEmployeesFromCloud,
 saveTemplateToCloud,
 loadTemplateFromCloud,
