@@ -1655,22 +1655,63 @@ async function generateEmployeeCard() {
 $("generateEmployeeBtn").addEventListener("click", generateEmployeeCard);
 $("replacePhotoBtn").addEventListener("click", () => $("builderPhoto").click());
 
-$("saveTemplateBtn").addEventListener("click", () => {
+$("saveTemplateBtn").addEventListener("click", async () => {
   ensurePoweredBy();
   saveCurrentSide();
-  localStorage.setItem(tenantKey(V61_TEMPLATE_KEY), snapshot());
-  builderStatus("Template saved on this device.");
+
+  const templateSnapshot = snapshot();
+  localStorage.setItem(tenantKey(V61_TEMPLATE_KEY), templateSnapshot);
+
+  try {
+    const account = readAccount();
+    const companyId = account?.companyId || account?.id;
+
+    if (account?.cloud && companyId && window.TabajaCloud?.saveTemplateToCloud) {
+      await window.TabajaCloud.saveTemplateToCloud(
+        companyId,
+        "Identity Card",
+        templateSnapshot
+      );
+      builderStatus("Template saved locally and to cloud.");
+    } else {
+      builderStatus("Template saved on this device.");
+    }
+  } catch (error) {
+    console.error("Cloud template save failed:", error);
+    builderStatus("Template saved on this device. Cloud backup failed.");
+  }
 });
 
 $("loadTemplateBtn").addEventListener("click", async () => {
-  const saved = localStorage.getItem(tenantKey(V61_TEMPLATE_KEY)) || (accountId(readAccount()) === "admin" ? localStorage.getItem(V61_TEMPLATE_KEY) : null);
-  if (!saved) return alert("No saved V6.1 template on this device.");
+  const account = readAccount();
+  const companyId = account?.companyId || account?.id;
+
+  let saved = null;
+
+  if (account?.cloud && companyId && window.TabajaCloud?.loadTemplateFromCloud) {
+    try {
+      saved = await window.TabajaCloud.loadTemplateFromCloud(
+        companyId,
+        "Identity Card"
+      );
+    } catch (error) {
+      console.error("Cloud template load failed:", error);
+    }
+  }
+
+  if (!saved) {
+    saved = localStorage.getItem(tenantKey(V61_TEMPLATE_KEY));
+  }
+
+  if (!saved) {
+    return alert("No saved template found.");
+  }
+
   await loadSnapshot(saved);
   ensurePoweredBy();
   saveCurrentSide();
   builderStatus("Template loaded — enter the next employee details and press Generate / Update Card.");
 });
-
 // Protect the mandatory footer from deletion.
 const v61OriginalDeleteHandler = $("deleteBtn").onclick;
 $("deleteBtn").onclick = () => {
