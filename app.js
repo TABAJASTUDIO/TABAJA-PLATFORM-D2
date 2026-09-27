@@ -24,7 +24,7 @@ let cropMode = false;
 
 const defaultAccount = { company: "Tabaja Solution", owner: "Tabaja Admin", email: "admin", country: "Sierra Leone", phone: "", plan: "Professional", features: { nfc: true, batch: true, qr: true, barcode: true } };
 function accountId(account) {
-  return String(account?.id || account?.email || account?.company || "default")
+  return String(account?.companyId || account?.id || account?.email || account?.company || "default")
     .trim().toLowerCase().replace(/[^a-z0-9]+/g, "_") || "default";
 }
 
