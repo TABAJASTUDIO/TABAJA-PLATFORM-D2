@@ -1638,7 +1638,7 @@ if (showDates) {
       dateParts.join("   •   "),
       {
         left: textLeft,
-        top: companyTop + H * 0.62,
+        top: H - 22,
         width: textWidth,
         heightLimit: H * 0.07,
         widthLimit: textWidth,
