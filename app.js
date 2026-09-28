@@ -1638,7 +1638,7 @@ if (showDates) {
       dateParts.join("   •   "),
       {
         left: textLeft,
-        top: H - 22,
+        top: H - 32,
         width: textWidth,
         heightLimit: H * 0.07,
         widthLimit: textWidth,
