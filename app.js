@@ -1690,14 +1690,12 @@ if (showDates) {
       fitBuilderText(valueObj, contactFont, 11);
     });
 
-    ensurePoweredBy();
 
     // Keep the structural background behind editable content.
     ["builderBackground", "builderAccent", "builderLine"].forEach(role => {
       const object = builderObject(role);
       if (object) canvas.sendToBack(object);
     });
-    ensurePoweredBy();
     canvas.discardActiveObject();
     canvas.requestRenderAll();
     saveCurrentSide();
