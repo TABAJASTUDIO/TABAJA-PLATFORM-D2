@@ -1535,6 +1535,9 @@ async function generateEmployeeCard() {
     const company = $("builderCompany").value.trim() || "COMPANY NAME";
     const name = $("builderName").value.trim() || "EMPLOYEE NAME";
     const job = $("builderJob").value.trim() || "Job Title";
+    const issueDate = $("builderIssueDate")?.value || "";
+const expiryDate = $("builderExpiryDate")?.value || "";
+const showDates = $("builderShowDates")?.checked === true;
     const phone = $("builderPhone").value.trim();
     const whatsapp = $("builderWhatsApp").value.trim();
     const email = $("builderEmail").value.trim();
@@ -1612,6 +1615,43 @@ async function generateEmployeeCard() {
       left: textLeft, top: companyTop + H * 0.34, width: textWidth, heightLimit: H * 0.10, widthLimit: textWidth,
       fontSize: landscape ? 28 : 25, fontWeight: "normal", fill: "#2c6e9d", textAlign: "left"
     });
+    // Optional Issue / Expiry dates
+["employeeIssueDate", "employeeExpiryDate"].forEach(role => {
+  const old = builderObject(role);
+  if (old) canvas.remove(old);
+});
+
+if (showDates) {
+  const dateParts = [];
+
+  if (issueDate) {
+    dateParts.push(`ISSUED: ${issueDate}`);
+  }
+
+  if (expiryDate) {
+    dateParts.push(`EXPIRES: ${expiryDate}`);
+  }
+
+  if (dateParts.length) {
+    const datesObj = builderAddOrUpdateText(
+      "employeeIssueDate",
+      dateParts.join("   •   "),
+      {
+        left: textLeft,
+        top: companyTop + H * 0.43,
+        width: textWidth,
+        heightLimit: H * 0.07,
+        widthLimit: textWidth,
+        fontSize: landscape ? 18 : 16,
+        fontWeight: "normal",
+        fill: "#263746",
+        textAlign: "left"
+      }
+    );
+
+    fitBuilderText(datesObj, landscape ? 18 : 16, 11);
+  }
+}
     fitBuilderText(jobObj, landscape ? 28 : 25, 15);
 
     // V7.2: contact and social-media icons. Empty fields create no icon and no text.
