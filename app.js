@@ -1615,6 +1615,11 @@ const showDates = $("builderShowDates")?.checked === true;
       left: textLeft, top: companyTop + H * 0.34, width: textWidth, heightLimit: H * 0.10, widthLimit: textWidth,
       fontSize: landscape ? 28 : 25, fontWeight: "normal", fill: "#2c6e9d", textAlign: "left"
     });
+    const formatCardDate = (value) => {
+  if (!value) return "";
+  const [year, month, day] = value.split("-");
+  return `${day}-${month}-${year}`;
+};
     // Optional Issue / Expiry dates
 ["employeeIssueDate", "employeeExpiryDate"].forEach(role => {
   const old = builderObject(role);
@@ -1625,11 +1630,11 @@ if (showDates) {
   const dateParts = [];
 
   if (issueDate) {
-    dateParts.push(`ISSUED: ${issueDate}`);
+    dateParts.push(`ISSUED: ${formatCardDate(issueDate)}`);
   }
 
   if (expiryDate) {
-    dateParts.push(`EXPIRES: ${expiryDate}`);
+    dateParts.push(`EXPIRES: ${formatCardDate(expiryDate)}`);
   }
 
   if (dateParts.length) {
