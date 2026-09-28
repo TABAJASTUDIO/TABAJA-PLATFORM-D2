@@ -789,7 +789,20 @@ $("deleteBtn").onclick = () => {
   canvas.discardActiveObject();
   canvas.requestRenderAll();
 };
+$("deleteAllBtn")?.addEventListener("click", () => {
+  if (!canvas.getObjects().length) {
+    return status("Card is already blank.");
+  }
 
+  if (!confirm("Delete ALL elements from this side of the card?")) return;
+
+  canvas.getObjects().slice().forEach(object => canvas.remove(object));
+  canvas.discardActiveObject();
+  canvas.requestRenderAll();
+  saveCurrentSide();
+
+  status("All elements deleted from this side.");
+});
 function syncProps() {
   const o = canvas.getActiveObject();
   if (!o) return;
