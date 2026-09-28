@@ -1727,7 +1727,8 @@ window.addEventListener('tabaja:employee-selected', async (event) => {
   setValue('builderCompany', employee.company);
   setValue('builderPhone', employee.phone);
   setValue('builderEmail', employee.email);
-
+setValue('builderIssueDate', employee.issueDate);
+setValue('builderExpiryDate', employee.expiryDate);
   builderPhotoData = employee.photo || '';
 
   setValue('builderWhatsApp', '');
