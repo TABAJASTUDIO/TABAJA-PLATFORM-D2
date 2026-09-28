@@ -1655,7 +1655,45 @@ async function generateEmployeeCard() {
     alert("Generate Card failed:\n" + (error.message || error));
   }
 }
+// ===== Employee Center -> Card Designer automatic mapping =====
+window.addEventListener('tabaja:employee-selected', async (event) => {
+  const employee = event.detail;
+  if (!employee) return;
 
+  const setValue = (id, value) => {
+    const element = document.getElementById(id);
+    if (element) element.value = value || '';
+  };
+
+  setValue(
+    'builderName',
+    [employee.firstName, employee.lastName].filter(Boolean).join(' ').trim()
+  );
+
+  setValue('builderJob', employee.jobTitle);
+  setValue('builderCompany', employee.company);
+  setValue('builderPhone', employee.phone);
+  setValue('builderEmail', employee.email);
+
+  builderPhotoData = employee.photo || '';
+
+  setValue('builderWhatsApp', '');
+  setValue('builderWebsite', '');
+  setValue('builderFacebook', '');
+  setValue('builderInstagram', '');
+  setValue('builderTwitter', '');
+  setValue('builderLinkedIn', '');
+
+  try {
+    await generateEmployeeCard();
+    saveCurrentSide();
+    canvas.requestRenderAll();
+    status('Employee loaded into Card Designer.');
+  } catch (error) {
+    console.error('Unable to load employee into designer:', error);
+    alert('Unable to load this employee into the Card Designer.');
+  }
+});
 $("generateEmployeeBtn").addEventListener("click", generateEmployeeCard);
 $("replacePhotoBtn").addEventListener("click", () => $("builderPhoto").click());
 
