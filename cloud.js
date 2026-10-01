@@ -434,19 +434,46 @@ async function loadTemplateFromCloud(companyId, name = 'Identity Card') {
     status: (employee.status || 'Active').toLowerCase()
   };
 
-  // Look for this employee inside THIS company only.
+  let cloudId = employee.id || null;
+
+  if (!cloudId && employee.key) {
+    const { data: byKey, error: keyError } = await supabase
+      .from('employees')
+      .select('id')
+      .eq('id', employee.key)
+      .eq('company_id', companyId)
+      .limit(1)
+      .maybeSingle();
+
+    if (keyError) throw keyError;
+
+    cloudId = byKey?.id || null;
+  }
+
+  if (cloudId) {
+    const { error } = await supabase
+      .from('employees')
+      .update(employeeData)
+      .eq('id', cloudId)
+      .eq('company_id', companyId);
+
+    if (error) throw error;
+
+    return cloudId;
+  }
+
   const { data: existing, error: lookupError } = await supabase
     .from('employees')
     .select('id')
     .eq('company_id', companyId)
     .eq('employee_code', employeeCode)
+    .eq('is_deleted', false)
     .limit(1)
     .maybeSingle();
 
   if (lookupError) throw lookupError;
 
   if (existing?.id) {
-    // Existing employee: update only the matching row in this company.
     const { error } = await supabase
       .from('employees')
       .update(employeeData)
@@ -454,16 +481,19 @@ async function loadTemplateFromCloud(companyId, name = 'Identity Card') {
       .eq('company_id', companyId);
 
     if (error) throw error;
-  } else {
-    // New employee: insert a new row.
-    const { error } = await supabase
-      .from('employees')
-      .insert(employeeData);
 
-    if (error) throw error;
+    return existing.id;
   }
 
-  return true;
+  const { data, error } = await supabase
+    .from('employees')
+    .insert(employeeData)
+    .select('id')
+    .single();
+
+  if (error) throw error;
+
+  return data.id;
 }
   async function archiveEmployeeInCloud(companyId, employeeId) {
   const supabase = getClient();
