@@ -13,7 +13,8 @@
   const tenantKey = (key) => `${key}__${activeTenantId()}`;
 
   let employees = [];
-  let photoData = '';
+let photoData = '';
+let loadedCompanyId = null;
 
   const $ = (id) => document.getElementById(id);
   const safe = (value = '') => String(value).replace(/[&<>'"]/g, (char) => ({
@@ -207,35 +208,57 @@
       updatedAt: new Date().toISOString()
     };
 
-    if (key) {
-      const index = employees.findIndex((item) => item.key === key);
-      if (index >= 0) employees[index] = { ...employees[index], ...record };
-    } else {
-      record.createdAt = new Date().toISOString();
-      employees.unshift(record);
-    }
-
-    try {
-      saveEmployees();
-      const account = JSON.parse(
-  localStorage.getItem('tabaja_card_designer_account_v10') || 'null'
-);
-
-const companyId = account?.companyId || account?.id;
-
-if (
-  account?.cloud &&
-  companyId &&
-  window.TabajaCloud?.saveEmployeeToCloud
-) {
-  await window.TabajaCloud.saveEmployeeToCloud(companyId, record);
+    if (!key) {
+  record.createdAt = new Date().toISOString();
 }
-      renderEmployees();
-      closeModal();
-    } catch (error) {
-      console.error(error);
-      $('employeeFormMessage').textContent = 'Storage is full. Try smaller photos or export a backup.';
+
+try {
+  const account = JSON.parse(
+    localStorage.getItem('tabaja_card_designer_account_v10') || 'null'
+  );
+
+  const companyId = account?.companyId || account?.id;
+
+  // Cloud first — Local Storage must never block the real save.
+  if (
+    account?.cloud &&
+    companyId &&
+    window.TabajaCloud?.saveEmployeeToCloud
+  ) {
+    const cloudId = await window.TabajaCloud.saveEmployeeToCloud(
+      companyId,
+      record
+    );
+
+    if (cloudId) {
+      record.id = cloudId;
+      record.key = cloudId;
     }
+  }
+
+  if (key) {
+    const index = employees.findIndex((item) => item.key === key);
+
+    if (index >= 0) {
+      employees[index] = {
+        ...employees[index],
+        ...record
+      };
+    }
+  } else {
+    employees.unshift(record);
+  }
+
+  saveEmployees();
+  renderEmployees();
+  closeModal();
+
+} catch (error) {
+  console.error('Unable to save employee:', error);
+
+  $('employeeFormMessage').textContent =
+    'Unable to save employee to Cloud. Please check your connection and try again.';
+}
   }
 
   function useInDesigner(employee) {
@@ -326,7 +349,7 @@ if (
   );
 
   const companyId = account?.companyId || account?.id;
-
+loadedCompanyId = companyId || null;
   if (
     account?.cloud &&
     companyId &&
@@ -375,15 +398,18 @@ if (
 window.addEventListener('tabaja:account-changed', async () => {
   if (!$('employeeWorkspace')) return;
 
-  // Clear the previous company's employees immediately.
-  employees = [];
-  renderEmployees();
-
   const account = JSON.parse(
     localStorage.getItem('tabaja_card_designer_account_v10') || 'null'
   );
 
-  const companyId = account?.companyId || account?.id;
+  const companyId = account?.companyId || account?.id || null;
+
+  if (companyId === loadedCompanyId) return;
+
+  loadedCompanyId = companyId;
+
+  employees = [];
+  renderEmployees();
 
   if (
     account?.cloud &&
