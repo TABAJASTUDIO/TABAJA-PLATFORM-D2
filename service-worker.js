@@ -1,12 +1,12 @@
-const CACHE_VERSION = 'tabaja-v12.9.3.16-fix5.7-rpc';
+const CACHE_VERSION = 'tabaja-v12.9.3.16-employee-hotfix1';
 const APP_SHELL = [
   './',
   './index.html',
   './style.css?v=12.9.3.14',
   './app.js?v=12.9.3.16-fix5.3-confirm-flow1',
-  './cloud.js?v=12.9.3.16-fix5.7-rpc',
+  './cloud.js?v=12.9.3.16-employee-hotfix1',
   './v8-ui.js?v=12.9.3.16-fix5',
-  './employee-manager.js?v=12.9.3.2',
+  './employee-manager.js?v=12.9.3.16-employee-hotfix1',
   './activity-store.js?v=12.9.3.2',
   './command-center.js?v=12.9.3.5',
   './pwa.js?v=12.9.3.16',
