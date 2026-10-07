@@ -478,6 +478,11 @@ function loadSnapshot(data) {
       canvas.setDimensions({ width: W, height: H });
       canvas.renderAll();
       syncProps();
+      const accent = builderObject("builderAccent");
+      const line = builderObject("builderLine");
+      if ($("builderSplitEnabled")) $("builderSplitEnabled").checked = Boolean(accent && accent.visible !== false);
+      if ($("builderDividerEnabled")) $("builderDividerEnabled").checked = Boolean(line && line.visible !== false);
+      if (line && $("builderDividerColor") && /^#[0-9a-f]{6}$/i.test(line.fill)) $("builderDividerColor").value = line.fill;
       resolve();
     });
   });
@@ -1401,6 +1406,8 @@ function wireQualityTools(){
 }
 
 let builderPhotoData = "";
+let builderHasSelectedEmployee = false;
+window.addEventListener('tabaja:account-changed', () => { builderHasSelectedEmployee = false; });
 let builderLogoData = "";
 let builderBatchBackgroundData = "";
 
@@ -1648,6 +1655,11 @@ function ensurePoweredBy() {
 async function generateEmployeeCard() {
   try {
     builderStatus("Generating employee card...");
+    const existingLayout = new Map(canvas.getObjects().filter(o => o.role &&
+      (o.role.startsWith('employee') || o.role.startsWith('contact') || o.role === 'companyLogo')).map(o => [o.role, o.toObject()]));
+    const savedPhotoSlot = builderObject('employeePhotoSlot');
+    const drawingFrame = canvas.getObjects().find(o=>o.role==='drawingShape' && o.type==='rect' && o.height>o.width && o.fill==='transparent');
+    const templatePhotoBox = savedPhotoSlot || drawingFrame;
     const landscape = orientation === "landscape";
     const company = $("builderCompany").value.trim() || "COMPANY NAME";
     const name = $("builderName").value.trim() || "EMPLOYEE NAME";
@@ -1688,7 +1700,13 @@ const showDates = $("builderShowDates")?.checked === true;
           hoverCursor: "ns-resize", moveCursor: "ns-resize"
         });
 
-    const photoBox = builderPhotoBoxForSplit(splitRatio);
+    setBuilderSplitVisibility();
+    let photoBox = builderPhotoBoxForSplit(splitRatio);
+    if(templatePhotoBox) {
+      const bounds=templatePhotoBox.getBoundingRect();
+      const inset=templatePhotoBox.role==='employeePhotoSlot'?0:Math.max(2,templatePhotoBox.strokeWidth||0);
+      photoBox={left:bounds.left+inset,top:bounds.top+inset,width:bounds.width-inset*2,height:bounds.height-inset*2};
+    }
     syncBuilderSplitControl(splitRatio);
     const logoBox = landscape
       ? { left: W * 0.77, top: H * 0.07, width: W * 0.17, height: H * 0.15 }
@@ -1712,8 +1730,8 @@ const showDates = $("builderShowDates")?.checked === true;
     if (builderLogoData) {
       await builderAddOrUpdateImage("companyLogo", builderLogoData, logoBox);
     } else {
-      const oldLogo = builderObject("companyLogo");
-      if (oldLogo) canvas.remove(oldLogo);
+      // A loaded template's embedded logo belongs to its design.
+      // Retain it when importing an employee without a new logo.
     }
 
     const textLeft = landscape ? W * 0.36 : W * 0.10;
@@ -1722,7 +1740,7 @@ const showDates = $("builderShowDates")?.checked === true;
 
     // Logo and company text are mutually exclusive: when a logo exists, show the logo only.
     const oldCompanyText = builderObject("employeeCompany");
-    if (builderLogoData) {
+    if (builderLogoData || builderObject("companyLogo")) {
       if (oldCompanyText) canvas.remove(oldCompanyText);
     } else {
       const companyObj = builderAddOrUpdateText("employeeCompany", company, {
@@ -1823,6 +1841,23 @@ if (showDates) {
     });
 
 
+    for(const [role, props] of existingLayout) {
+      if(role==='employeePhoto'||role==='employeePhotoSlot'||role.includes('Placeholder')) continue;
+      const obj=builderObject(role); if(!obj) continue;
+      const style={...props}; delete style.text; delete style.type; delete style.version;
+      obj.set(style); obj.setCoords();
+    }
+    const currentPhoto=builderObject('employeePhoto');
+    if(currentPhoto && templatePhotoBox) {
+      const scale=Math.min(photoBox.width/currentPhoto.width,photoBox.height/currentPhoto.height);
+      currentPhoto.set({left:photoBox.left+photoBox.width/2,top:photoBox.top+photoBox.height/2,originX:'center',originY:'center',scaleX:scale,scaleY:scale});
+      currentPhoto.setCoords();
+      if(drawingFrame) canvas.bringToFront(drawingFrame);
+    } else if(currentPhoto && existingLayout.has('employeePhoto')) {
+      const old=existingLayout.get('employeePhoto');
+      const scale=Math.min(old.width*old.scaleX/currentPhoto.width,old.height*old.scaleY/currentPhoto.height);
+      currentPhoto.set({left:old.left,top:old.top,originX:old.originX,originY:old.originY,angle:old.angle,scaleX:scale,scaleY:scale}); currentPhoto.setCoords();
+    }
     // Keep the structural background behind editable content.
     ["builderBackground", "builderAccent", "builderLine"].forEach(role => {
       const object = builderObject(role);
@@ -1869,6 +1904,8 @@ setValue('builderExpiryDate', employee.expiryDate);
   setValue('builderLinkedIn', '');
 
   try {
+    builderHasSelectedEmployee = true;
+    if (!await chooseSavedEmployeeTemplate(true)) return;
     await generateEmployeeCard();
     saveCurrentSide();
     canvas.requestRenderAll();
@@ -1899,12 +1936,14 @@ templateData.objects = (templateData.objects || []).map((object) => {
   }
 
   if (role === "employeePhoto") {
-    return null;
+    const sx=object.scaleX||1, sy=object.scaleY||1;
+    return {type:'rect', role:'employeePhotoSlot',left:object.left,top:object.top,
+      width:object.width*sx,height:object.height*sy,originX:object.originX,originY:object.originY,
+      angle:object.angle||0,fill:'transparent',strokeWidth:0,visible:false,selectable:false,evented:false};
   }
 
-  if (role.startsWith("contactIcon") || role.startsWith("contactValue")) {
-    return null;
-  }
+  if (role.startsWith("contactValue")) return { ...object, text: "" };
+  if (role.startsWith("contactIcon")) return object;
 
   return object;
 }).filter(Boolean);
@@ -1932,7 +1971,17 @@ const templateSnapshot = JSON.stringify(templateData);
 
   builderStatus("Template saved locally and to cloud.");
     } else {
-      builderStatus("Template saved on this device.");
+      const name = prompt("Name this template:", "B7S");
+      if (!name?.trim()) return builderStatus("Latest template saved on this device.");
+      const key=tenantKey('tabaja-templates');
+      const list=JSON.parse(localStorage.getItem(key)||'[]');
+      const existing=list.findIndex(t=>t.name===name.trim());
+      if(existing>=0 && !confirm("Replace the saved template with this name?")) return;
+      const item={name:name.trim(), snapshot:templateSnapshot, updatedAt:new Date().toISOString()};
+      if(existing>=0) list[existing]=item; else list.push(item);
+      localStorage.setItem(key,JSON.stringify(list));
+      window.dispatchEvent(new Event('tabaja:data-changed'));
+      builderStatus("Named template saved on this device.");
     }
   } catch (error) {
     console.error("Cloud template save failed:", error);
@@ -1940,7 +1989,7 @@ const templateSnapshot = JSON.stringify(templateData);
   }
 });
 
-$("loadTemplateBtn").addEventListener("click", async () => {
+async function chooseSavedEmployeeTemplate(allowEmpty = false) {
   const account = readAccount();
   const companyId = account?.companyId || account?.id;
 
@@ -1951,12 +2000,13 @@ $("loadTemplateBtn").addEventListener("click", async () => {
       const templates = await window.TabajaCloud.listTemplatesFromCloud(companyId);
 
 if (templates.length === 0) {
-  return alert("No saved template found.");
+  if(allowEmpty) return true;
+  alert("No saved template found."); return false;
 }
 
 let selectedTemplate = templates[0];
 
-if (templates.length > 1) {
+if (templates.length >= 1) {
   const menu = templates
     .map((template, index) => `${index + 1}. ${template.name}`)
     .join("\n");
@@ -1987,17 +2037,30 @@ saved = await window.TabajaCloud.loadTemplateFromCloud(
   }
 
   if (!saved) {
-    saved = localStorage.getItem(tenantKey(V61_TEMPLATE_KEY));
+    const list=JSON.parse(localStorage.getItem(tenantKey('tabaja-templates'))||'[]');
+    if(list.length) {
+      const choice=prompt("Choose a template:\n"+list.map((t,i)=>`${i+1}. ${t.name}`).join('\n'),"1");
+      if(choice===null) return;
+      const index=Number(choice)-1;
+      if(!Number.isInteger(index)||index<0||index>=list.length) return alert("Invalid template number.");
+      saved=list[index].snapshot;
+    } else saved = localStorage.getItem(tenantKey(V61_TEMPLATE_KEY));
   }
 
   if (!saved) {
-    return alert("No saved template found.");
+    if(allowEmpty) return true;
+    alert("No saved template found."); return false;
   }
 
   await loadSnapshot(saved);
   ensurePoweredBy();
   saveCurrentSide();
-  builderStatus("Template loaded — enter the next employee details and press Generate / Update Card.");
+  builderStatus("Template loaded.");
+  return true;
+}
+$("loadTemplateBtn").addEventListener("click", async () => {
+  if (!await chooseSavedEmployeeTemplate()) return;
+  if (builderHasSelectedEmployee) await generateEmployeeCard();
 });
 // Protect the mandatory footer from deletion.
 const v61OriginalDeleteHandler = $("deleteBtn").onclick;
@@ -2070,12 +2133,26 @@ $("resetWhiteBackgroundBtn").addEventListener("click", () => {
 });
 $("cardBackgroundImageBtn").addEventListener("click", () => chooseImage("background"));
 
+function setBuilderSplitVisibility() {
+  const enabled = $("builderSplitEnabled")?.checked !== false;
+  const accent = builderObject("builderAccent");
+  const line = builderObject("builderLine");
+  if (accent) accent.set("visible", enabled);
+  if (line) line.set({ visible: enabled && $("builderDividerEnabled")?.checked !== false,
+    fill: $("builderDividerColor")?.value || "#2f9bdd" });
+  canvas.requestRenderAll();
+}
+["builderSplitEnabled", "builderDividerEnabled", "builderDividerColor"].forEach(id => {
+  $(id)?.addEventListener("change", () => { setBuilderSplitVisibility(); saveCurrentSide(); });
+});
+
 function applySplitBackgroundControls() {
   const ratio = builderSplitRatio();
   const rightColor = builderSplitRightColor();
   removeBackgroundImageObjects();
   canvas.setBackgroundColor(rightColor, () => {
     applyBuilderSplitGeometry(ratio, { updatePhoto: true, persist: false });
+    setBuilderSplitVisibility();
     finishCardBackground(`Split background applied — photo area ${Math.round(ratio * 100)}%.`);
   });
 }
