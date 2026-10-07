@@ -21,31 +21,67 @@ let loadedCompanyId = null;
     '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;'
   }[char]));
 
-  function loadEmployees() {
+  function employeeDatabase() {
+    return new Promise((resolve, reject) => {
+      const request = indexedDB.open('tabaja-employee-backups-v1', 1);
+      request.onupgradeneeded = () => request.result.createObjectStore('companies');
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () => reject(request.error);
+    });
+  }
+
+  window.TabajaEmployeeStore = { async read(tenantId) {
+    const key = `${STORAGE_KEY}__${tenantId}`;
     try {
-      const parsed = JSON.parse(localStorage.getItem(tenantKey(STORAGE_KEY)) || '[]');
+      const db = await employeeDatabase();
+      try {
+        const value = await new Promise((resolve, reject) => {
+          const req = db.transaction('companies').objectStore('companies').get(key);
+          req.onsuccess = () => resolve(req.result); req.onerror = () => reject(req.error);
+        });
+        if (Array.isArray(value)) return value;
+      } finally { db.close(); }
+    } catch (_) {}
+    try { const value=JSON.parse(localStorage.getItem(key)||'[]'); return Array.isArray(value)?value:[]; }
+    catch (_) { return []; }
+  }};
+
+  async function loadEmployees() {
+    const key = tenantKey(STORAGE_KEY);
+    try {
+      const db = await employeeDatabase();
+      const saved = await new Promise((resolve, reject) => {
+        const request = db.transaction('companies').objectStore('companies').get(key);
+        request.onsuccess = () => resolve(request.result);
+        request.onerror = () => reject(request.error);
+      });
+      db.close();
+      if (Array.isArray(saved)) { employees = saved; return; }
+    } catch (error) { console.warn('Employee database unavailable:', error); }
+    try {
+      const parsed = JSON.parse(localStorage.getItem(key) || '[]');
       employees = Array.isArray(parsed) ? parsed : [];
+    } catch (error) { console.error('Unable to load employees:', error); employees = []; }
+  }
+
+  async function saveEmployees() {
+    const key = tenantKey(STORAGE_KEY);
+    const records = JSON.parse(JSON.stringify(employees));
+    try {
+      const db = await employeeDatabase();
+      await new Promise((resolve, reject) => {
+        const transaction = db.transaction('companies', 'readwrite');
+        transaction.objectStore('companies').put(records, key);
+        transaction.oncomplete = resolve;
+        transaction.onerror = () => reject(transaction.error);
+        transaction.onabort = () => reject(transaction.error || new Error('Save aborted'));
+      });
+      db.close();
     } catch (error) {
-      console.error('Unable to load employees:', error);
-      employees = [];
+      // Legacy fallback must retain photos too; never silently strip them.
+      localStorage.setItem(key, JSON.stringify(records));
     }
   }
-
-  function saveEmployees() {
-  try {
-    const lightCache = employees.map((employee) => ({
-      ...employee,
-      photo: ''
-    }));
-
-    localStorage.setItem(
-      tenantKey(STORAGE_KEY),
-      JSON.stringify(lightCache)
-    );
-  } catch (error) {
-    console.warn('Unable to save employee cache:', error);
-  }
-}
 
   function fullName(employee) {
     return [employee.firstName, employee.lastName].filter(Boolean).join(' ').trim() || 'Unnamed Employee';
@@ -249,7 +285,7 @@ try {
     employees.unshift(record);
   }
 
-  saveEmployees();
+  await saveEmployees();
   renderEmployees();
   closeModal();
 
@@ -268,7 +304,7 @@ try {
     alert(`${fullName(employee)} is selected for the Card Designer.\n\nThis V11.0 test stores the selected record safely. Automatic template-field mapping comes in V11.1.`);
   }
 
-  function handleTableClick(event) {
+  async function handleTableClick(event) {
     const button = event.target.closest('button[data-action]');
     if (!button) return;
     const employee = employees.find((item) => item.key === button.dataset.key);
@@ -289,9 +325,9 @@ try {
     window.TabajaCloud?.archiveEmployeeInCloud
   ) {
     window.TabajaCloud.archiveEmployeeInCloud(companyId, employee.id)
-      .then(() => {
+      .then(async () => {
         employees = employees.filter((item) => item.key !== employee.key);
-        saveEmployees();
+        await saveEmployees();
         renderEmployees();
       })
       .catch((error) => {
@@ -303,7 +339,7 @@ try {
   }
 
   employees = employees.filter((item) => item.key !== employee.key);
-  saveEmployees();
+  await saveEmployees();
   renderEmployees();
 }
   }
@@ -330,12 +366,28 @@ try {
       }));
       if (!confirm(`Import ${valid.length} employee record(s)? Existing records with the same Employee ID will be replaced.`)) return;
       const map = new Map(employees.map((item) => [item.employeeId.toLowerCase(), item]));
-      valid.forEach((item) => map.set(item.employeeId.toLowerCase(), item));
+      const account = JSON.parse(localStorage.getItem('tabaja_card_designer_account_v10') || 'null');
+      const companyId = account?.companyId || account?.id;
+      for (const item of valid) {
+        // Backup IDs belong to the source company. Resolve by employee code in the destination.
+        if (account?.cloud && companyId) {
+          if (!window.TabajaCloud?.saveEmployeeToCloud) throw new Error('Cloud save unavailable');
+          const destination = { ...item };
+          delete destination.id;
+          delete destination.key;
+          const id = await window.TabajaCloud.saveEmployeeToCloud(companyId, destination);
+          if (!id) throw new Error('Cloud save did not return an employee ID');
+          item.id = id;
+          item.key = id;
+        }
+        map.set(item.employeeId.toLowerCase(), item);
+      }
       employees = Array.from(map.values());
-      saveEmployees();
+      await saveEmployees();
       renderEmployees();
     } catch (error) {
-      alert('This file is not a valid Tabaja Employee backup.');
+      console.error('Employee import failed:', error);
+      alert('Import could not complete: ' + error.message + '. Keep the original backup; some cloud records may already be saved.');
     } finally {
       $('importEmployeesFile').value = '';
     }
@@ -359,15 +411,15 @@ loadedCompanyId = companyId || null;
       employees = await window.TabajaCloud.loadEmployeesFromCloud(companyId);
 
       // Keep a local cache for this company, but Cloud is the source of truth.
-      saveEmployees();
+      await saveEmployees();
     } catch (error) {
       console.error('Unable to load cloud employees:', error);
 
       // If Cloud is temporarily unavailable, fall back to this company's cache.
-      loadEmployees();
+      await loadEmployees();
     }
   } else {
-    loadEmployees();
+    await loadEmployees();
   }
 
   renderEmployees();
@@ -418,13 +470,13 @@ window.addEventListener('tabaja:account-changed', async () => {
   ) {
     try {
       employees = await window.TabajaCloud.loadEmployeesFromCloud(companyId);
-      saveEmployees();
+      await saveEmployees();
     } catch (error) {
       console.error('Unable to reload employees after account change:', error);
-      loadEmployees();
+      await loadEmployees();
     }
   } else {
-    loadEmployees();
+    await loadEmployees();
   }
 
   renderEmployees();

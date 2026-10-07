@@ -122,8 +122,13 @@ const readArray = (key) => {
     renderLastBatch([]);
   }
 
+  let renderSequence = 0;
   async function render() {
-  const employees = readArray('tabaja-employees-v11');
+  const sequence = ++renderSequence;
+  const tenant = activeTenantId();
+  const employees = window.TabajaEmployeeStore
+    ? await window.TabajaEmployeeStore.read(tenant) : readArray('tabaja-employees-v11');
+  if(sequence !== renderSequence || tenant !== activeTenantId()) return;
   const jobs = readArray('tabaja-print-jobs');
   const cards = readArray('tabaja-recent-cards');
   const localTemplates = readArray('tabaja-templates');
@@ -135,7 +140,8 @@ const readArray = (key) => {
   setText('ccActivityEmployees', `${employees.length} records available.`);
   setText('ccTodayJobs', todayJobs.length);
   setText('ccTodayCards', todayCards);
-  // Cloud template count is loaded below.
+  setText('ccTemplateCount', localTemplates.length);
+  setText('reportTemplates', localTemplates.length);
   setText('ccQueueCount', `${jobs.filter((job) => job.status === 'queued').length} waiting`);
   setText('reportCardsToday', todayCards);
   setText('reportEmployees', employees.length);
@@ -161,6 +167,7 @@ const readArray = (key) => {
       const cloudTemplates =
         await window.TabajaCloud.listTemplatesFromCloud(companyId);
 
+      if(sequence !== renderSequence || tenant !== activeTenantId()) return;
       setText('ccTemplateCount', cloudTemplates.length);
       setText('reportTemplates', cloudTemplates.length);
     }

@@ -1,20 +1,24 @@
-const CACHE_VERSION = 'tabaja-v12.9.3.16-employee-hotfix1';
+const CACHE_VERSION = 'tabaja-v12.9.3.16-identity-fix4';
 const APP_SHELL = [
-  './',
-  './index.html',
-  './style.css?v=12.9.3.14',
-  './app.js?v=12.9.3.16-fix5.3-confirm-flow1',
-  './cloud.js?v=12.9.3.16-employee-hotfix1',
-  './v8-ui.js?v=12.9.3.16-fix5',
-  './employee-manager.js?v=12.9.3.16-employee-hotfix1',
-  './activity-store.js?v=12.9.3.2',
-  './command-center.js?v=12.9.3.5',
-  './pwa.js?v=12.9.3.16',
-  './nfc-studio.js?v=12.9.3-local-pwa-fix2',
-  './manifest.webmanifest',
-  './icons/icon-192.png',
-  './icons/icon-512.png',
-  './icons/icon-maskable-512.png'
+  "./",
+  "./index.html",
+  "./manifest.webmanifest",
+  "./icons/icon-192.png?v=12.7.0",
+  "./icons/tabaja-solution.ico?v=12.7.0",
+  "./icons/icon-192.png",
+  "./style.css?v=12.9.3.14",
+  "./cloud.js?v=12.9.3.16-employee-hotfix1",
+  "./app.js?v=12.9.3.16-identity-fix4",
+  "./commercial-templates.js?v=12.9.3.16-fix5?v=12.7.0-fix2",
+  "./v8-ui.js?v=12.9.3.16-fix5",
+  "./drawing-tools.js?v=12.9.3.16-identity-fix4",
+  "./employee-manager.js?v=12.9.3.16-identity-fix4",
+  "./activity-store.js?v=12.9.3.2",
+  "./command-center.js?v=12.9.3.16-identity-fix4",
+  "./nfc-studio.js?v=12.9.3-local-pwa-fix2",
+  "./pwa.js?v=12.9.3.16",
+  "./icons/icon-512.png",
+  "./icons/icon-maskable-512.png"
 ];
 
 self.addEventListener('install', event => {
@@ -25,7 +29,7 @@ self.addEventListener('install', event => {
 self.addEventListener('activate', event => {
   event.waitUntil(
     caches.keys()
-      .then(keys => Promise.all(keys.filter(key => key !== CACHE_VERSION).map(key => caches.delete(key))))
+      .then(keys => Promise.all(keys.filter(key => key.startsWith('tabaja-v') && key !== CACHE_VERSION).map(key => caches.delete(key))))
       .then(() => self.clients.claim())
   );
 });
